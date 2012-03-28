@@ -80,7 +80,7 @@ class Profile extends DataObject implements PermissionProvider {
 	 $validGroup->write();
 
 	 Permission::grant( $validGroup->ID, $code );
-	 Database::alteration_message("$readable group created","created");
+	 DB::alteration_message("$readable group created","created");
       }
       else if(DB::query(
 	    "SELECT * FROM Permission WHERE `GroupID` = '$validGroup->ID' AND `Code` LIKE '$code'")
@@ -110,7 +110,7 @@ class Profile extends DataObject implements PermissionProvider {
       $this -> updatePermissionDB('POWER_USER', 'Extended privilege users');  
       $this -> updatePermissionDB('ROBOT_USER', 'Sends Tweets');  
       $mentorGroup = $this -> updatePermissionDB('MENTOR', 'Most Privileged');  
-      $jim = DataObject::get_one('Member', 'FirstName="jahbini"');
+      $jim = DataObject::get_one('Member', "`FirstName`='jahbini'");
       if(!$jim) {
 	      $jim=new Member(array('FirstName'=>'jahbini') );
 	      }
@@ -122,7 +122,7 @@ class Profile extends DataObject implements PermissionProvider {
 	   $jim->write();
 	   $jim->Groups()->add($adminGroup);
 	   $jim->write();
-	   $jimProfile = DataObject::get_one('Profile','`Nickname`="jahbini"');
+	   $jimProfile = DataObject::get_one('Profile',"`Nickname`='jahbini'");
 	   if(!$jimProfile) {
 		   $jimProfile= new Profile(array('Nickname' => 'jahbini') );
 	   }

@@ -191,7 +191,7 @@ JSON
 			$b ->destroy();
 			$b = $be;
 
-			$member = DataObject::get_one('Member', '`FirstName`="' . $name . '"');
+			$member = DataObject::get_one('Member', "`FirstName`='" . $name . "'");
 			if (!$member instanceOF Member){
 				$member = Object::create('Member');
 				$member -> email = $member -> FirstName = $member->Surname = $name;
@@ -199,7 +199,7 @@ JSON
 				$member -> write();
 			}
 
-			$profile = DataObject::get_one('Profile', '`Nickname`="' . $name . '"');
+			$profile = DataObject::get_one('Profile', "`Nickname`='" . $name . "'");
 			if(!$profile) {
 				$profile = new Profile();
 				$profile -> Nickname = $name;

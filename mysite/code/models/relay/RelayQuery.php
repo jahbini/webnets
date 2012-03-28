@@ -293,5 +293,4 @@ if($debug_hot) error_log("in " . __CLASS__. " Method " . __METHOD__ . " Line=" .
 		return $q;
 	}
 }
-error_log("RelayQuery Finished S O U R C I N G");
 ?>
