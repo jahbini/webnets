@@ -396,7 +396,7 @@ class SaneRest extends ViewableData {
 
 }
 
-class RestfulService_Response extends HTTPResponse {
+class RestfulService_Response extends SS_HTTPResponse {
 	protected $simpleXML;
 
 	function setDefaultNamespace($as='default') {

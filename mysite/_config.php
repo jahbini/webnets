@@ -115,10 +115,10 @@ Security::setDefaultAdmin('jahbini','password');
 
 $databaseConfig = array(
 	"type" => "MySQLDatabase",
-	"server" => "localhost:/tmp/mysql.sock", 
+	"server" => "127.0.0.1:3306", 
 	"username" => "jahbini", 
 	"password" => "G3tTh1n", 
-	"database" => "mychirps"
+	"database" => "webnets"
 );
 }
 /* use tell140 credentials */
@@ -132,10 +132,11 @@ Authenticator::set_default_authenticator('ProfileAuthenticator');
 //$_GET['debug']=1;
 //$_REQUEST['debug']=1;
 include_once("code/utility/PleaseMap.php");
-include_once("code/utility/PaneDef.php");
+//include_once("code/utility/PaneDef.php");
+include_once("code/models/tweetGathering/TwitterQuery.php");
 //include_once("code/background/DoToDoItem.php");
-include_once("code/models/Tweet.php");
-include_once("code/auth/twitterOAuth.php");
+include_once("code/models/tweetGathering/Tweet.php");
+//include_once("code/auth/twitterOAuth.php");
 // This line set's the current theme. More themes can be
 // downloaded from http://www.silverstripe.com/themes/
 //SSViewer::set_theme('blackcandy');
@@ -146,7 +147,7 @@ Director::addRules(60,array( 'DoToDoItem' => 'DoToDoItem' ) );
 Director::addRules(60,array( 'DoToDoItem//$action' => 'DoToDoItem' ) );
 //Director::addRules(90,array( '$ID' => 'ShowContest') );
 
-//require_once("../sapphire/core/model/DB.php");
+//require_once("../../sapphire/core/model/DB.php");
 
 
 function &_v($parent,$index,$kind = "stdClass",$fail=true){

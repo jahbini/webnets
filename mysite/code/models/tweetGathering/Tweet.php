@@ -22,6 +22,7 @@ class Tweet extends DataObject {
 	static $has_one = array ('TweetUser' => 'TweetUser');
 	static $many_many = array ('SimpleTags' => 'Tag');
 	static $indexes = array ( 'StatusID' => 'unique (StatusID)', 'searchfields' => "fulltext (author_name,Title)" );
+	static $create_table_options = array('MySQLDatabase' => 'ENGINE=MyISAM'); //InnoDB does not support fulltext search
 
 	
 	static $required=false;

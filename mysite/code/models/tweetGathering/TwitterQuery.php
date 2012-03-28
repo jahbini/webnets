@@ -36,11 +36,11 @@ class TwitterQuery extends DataObject {
 
 	function __construct() {
 		$args =func_get_args() ;
-		call_user_func_array(array($this,'parent::__construct'), $args );
-		//error_log("Twitter Query I N I T I A L I Z E");
+		call_user_func_array('parent::__construct' , $args );
 		$this -> range=new TweetRange;
 		$this -> debug=false;
 		$this -> queryTag=false;
+		return;
 	}
 
 	protected function fillQuery ($params,$more) {
