@@ -1,0 +1,3 @@
+ */2 * * * *  cd /home/jahbini/tweeparty.com/cgi-bin; /home/jahbini/tweeparty.com/cgi-bin/php-execute DoTodoItem
+ 20 1 * * * cd /home/jahbini/tweeparty.com/cgi-bin; /home/jahbini/tweeparty.com/cgi-bin/php-execute DoTodoItem/refreshPen
+ 30 */3 * * * cd /home/jahbini/tweeparty.com/cgi-bin; /home/jahbini/tweeparty.com/cgi-bin/php-execute DoTodoItem/autoTweet
