@@ -2,10 +2,19 @@
 class Page extends SiteTree {
 
 	public static $db = array(
+		'DisableSubDomain' => 'Boolean'
 	);
 
 	public static $has_one = array(
 	);
+   
+    function getCMSFields() {
+        $fields = parent::getCMSFields();
+         
+        $fields->addFieldToTab('Root.Main', new CheckboxField('DisableSubDomain',$this->fieldLabel('Disable eGroup Text')),"Content");
+         
+        return $fields;
+    }
 
 }
 class Page_Controller extends ContentController {
@@ -31,11 +40,13 @@ class Page_Controller extends ContentController {
 	public function init() {
 		parent::init();
 
-		// Note: you should use SS template require tags inside your templates 
-		// instead of putting Requirements calls here.  However these are 
-		// included so that our older themes still work
-		Requirements::themedCSS('layout'); 
-		Requirements::themedCSS('typography'); 
-		Requirements::themedCSS('form'); 
+	}
+
+	public function subDomain () {
+		if ($this -> DisableSubDomain) return false;
+	global $wantedSubDomain;
+		$the_sub = DataObject::get_one('SubDomain','"Title"=' ."'$wantedSubDomain'");
+		return $the_sub;
+	
 	}
 }

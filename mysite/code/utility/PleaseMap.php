@@ -619,7 +619,7 @@ class PleaseMap {
 
 }
 if (false) { //set true for test
-class test {
+class TestMap {
 	var $myName;
 	// always remember array keys are destination variable names, values are the source field names
 	var $pleaseMap = array ('var1' => 'var4', 'var2' => 'nonAvalue' , 'var3'=>'var5' );
@@ -658,8 +658,8 @@ class test {
 
 }
 
-$c1= new test;
-$c2= new test;
+$c1= new TestMap;
+$c2= new TestMap;
 $c1 -> myName = "destination";
 $c2 -> myName = "source";
 $c2->debug();
