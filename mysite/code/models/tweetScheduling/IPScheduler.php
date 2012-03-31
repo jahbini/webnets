@@ -7,7 +7,7 @@
  */
 class IPScheduler extends Scheduler {
 
-	static function get_IPscheduler() {
+	static function get_IPScheduler() {
 		$s = DataObject::get_one('IPScheduler'); // there is only one
 
 		if ($s) {

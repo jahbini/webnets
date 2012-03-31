@@ -63,7 +63,7 @@ class Cell176Page_Controller extends Page_Controller {
 		$iterator +=1;
 		}
 		$data = array('Mentor' => $this->mentor, 'GeoShort'=> $GeoShort, 'Geo' => $Geo, 
-			'Categories' => $panes,'PageIdentifier'=>$this->profile->Nickname .' says:') ;
+			'Categories' => $panes,'PageIdentifier'=>$this->profile->Name .' says:') ;
 	  	return $this->customise($data)->renderWith(array('Cell176Page','176Page'));
 	}
 

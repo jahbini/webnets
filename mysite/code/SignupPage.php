@@ -54,7 +54,7 @@ function init() {
 function Form() {
   //create fields 
   $fields = new FieldSet ( 
-	     $name= new TextField("Nickname",'Your user name',$this->mentee->screen_name),
+	     $name= new TextField("Name",'Your user name',$this->mentee->screen_name),
 	     new PointyEmailField('Email','Enter a valid e-mail address'));
   $actions = new FieldSet(
 	     new FormAction('createUser', 'Submit')
@@ -92,7 +92,7 @@ function validate () {
 	   if ($Profile -> memberID == 0) {
 		 $Member = new Member();
 		 $Member -> Email = $Profile -> Email;
-		 $Member -> FirstName =$Profile->Nickname;
+		 $Member -> FirstName =$Profile->Name;
 		 $Member -> Surname = "";
 		 $Member -> NumVisit = 0;
 		 $Member -> write();
@@ -114,7 +114,7 @@ function validate () {
 	      $Profile->write();
 
 	      Session::set("Security.Message.message", 
-		    sprintf(_t('Member.WELCOMEBACK', "Welcome Back, %s"), $Profile->Nickname)
+		    sprintf(_t('Member.WELCOMEBACK', "Welcome Back, %s"), $Profile->Name)
 			  );
 	      Session::set("Security.Message.type", "good");
 	      Session::set('ProfileID', $Profile->ID);
@@ -145,11 +145,11 @@ private function send_email ( $Profile ) {
 }
 
 function Resend ( ) {
-   if(! isset($_REQUEST['Nickname']) ) {
+   if(! isset($_REQUEST['Name']) ) {
       Director::redirectBack();
    }
 
-   $Profile = DataObject::get_one('Profile' , "`Nickname`='".$_REQUEST['Nickname']."'");
+   $Profile = DataObject::get_one('Profile' , "`Name`='".$_REQUEST['Name']."'");
    $this->send_email ($Profile);
    $this-> Content = 'E-mail has been sent';
    return $this ->customise(array( 'Form' => '')) ->renderWith('Page');

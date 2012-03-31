@@ -29,8 +29,8 @@ class ProfileAuthenticator extends Authenticator {
    * @see Security::setDefaultAdmin()
    */
   public static function authenticate($RAW_data, Form $form = null) {
-		$nick = Convert::raw2sql($RAW_data['Nickname']);
-		$Profile = DataObject::get_one("Profile", "Profile.Nickname = '$nick'");
+		$nick = Convert::raw2sql($RAW_data['Name']);
+		$Profile = DataObject::get_one("Profile", "Profile.Name = '$nick'");
 		if (!$Profile) {
 			$form->sessionMessage(
 			_t('Profile.ERRORWRONGCRED',

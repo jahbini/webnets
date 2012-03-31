@@ -1,15 +1,37 @@
 <?php
 // vim:sw=3:sts=3:ft=php:    
+class ProfileNames extends ModelAdmin {
+      
+     public static $managed_models = array(
+	      'Profile'
+	         );           
+                     
+       static $url_segment = 'profiles'; // will be linked as /admin/products
+       static $menu_title = 'Profiles';
+               
+}
 
 class Profile extends DataObject implements PermissionProvider {
-   static $db = array('Nickname' => 'Varchar', 'Email' => 'Varchar', 'ValidationToken' => 'Varchar' , 'allow' => "Enum('OK, blocked','OK')" , 'RoleID' => 'Int');
+   static $db = array('Name' => 'Varchar', 'Email' => 'Varchar', 'ValidationToken' => 'Varchar' , 'allow' => "Enum('OK, blocked','OK')" , 'RoleID' => 'Int');
 
    static $many_many = array('TwitterQueries' => 'TwitterQuery');
    static $has_many = array('PenNames' => 'PenName', 'Modes' => 'Mode' );
-   static $indexes = array('Nickname' => true);
+   static $indexes = array('Name' => true);
    static $has_one = array('Member' => 'Member');
 
    //static $many_many = array('TopTen' => 'Tag');
+
+   Static $summary_fields = array ('Name');
+   static $searchable_fields = array('Name');
+
+  function getCMSFields(){              
+	 $fields = parent::getCMSFields();
+	 Debug::show("Profile Get CMS Fields");
+	 echo("<pre>");
+	 print_r($fields);
+	 echo("</pre>");
+	 return formUtility::removeFields($fields,array('ValidationToken','RoleID'));
+      }
 
 
    var $member;
@@ -19,7 +41,7 @@ class Profile extends DataObject implements PermissionProvider {
       if( !$profile) {
 	 $member=DataObject::get_by_id('Member', $memberID);
          $profile = new Profile ( array ( 'Email' => $member->Email,
-                                          'Nickname' => $member->Email,
+                                          'Name' => $member->Email,
                                           'MemberID' => $member->ID ) );
 	 $profile->write();
          }
@@ -111,6 +133,7 @@ class Profile extends DataObject implements PermissionProvider {
       $this -> updatePermissionDB('ROBOT_USER', 'Sends Tweets');  
       $mentorGroup = $this -> updatePermissionDB('MENTOR', 'Most Privileged');  
       $jim = DataObject::get_one('Member', "`FirstName`='jahbini'");
+      echo('<h2> one </h2>');
       if(!$jim) {
 	      $jim=new Member(array('FirstName'=>'jahbini') );
 	      }
@@ -122,13 +145,14 @@ class Profile extends DataObject implements PermissionProvider {
 	   $jim->write();
 	   $jim->Groups()->add($adminGroup);
 	   $jim->write();
-	   $jimProfile = DataObject::get_one('Profile',"`Nickname`='jahbini'");
+	   $jimProfile = DataObject::get_one('Profile',"`Name`='jahbini'");
 	   if(!$jimProfile) {
-		   $jimProfile= new Profile(array('Nickname' => 'jahbini') );
+		   $jimProfile= new Profile(array('Name' => 'jahbini') );
 	   }
 	   $jimProfile -> MemberID = $jim->ID;
 	   $jimProfile -> write();
 
+      echo('<h2> two </h2>');
       $all_users=DataObject::get('Member');
       if($all_users) foreach ($all_users as $u) {
 	      if ($u -> Surname == 'socialite' ) {

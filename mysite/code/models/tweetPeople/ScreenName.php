@@ -4,6 +4,17 @@
  * could pick up on a name.  Hence the screen_name is now a many_many
  * splintered thing.
  */
+class ScreenNames extends ModelAdmin {
+   
+  public static $managed_models = array(
+      'ScreenName'
+   );
+ 
+  static $url_segment = 'ScreenName'; // will be linked as /admin/products
+  static $menu_title = 'edit screen names';
+ 
+}
+
 
 class ScreenName extends DataObject {
 	static $db = array ('screen_name' => 'Varchar');

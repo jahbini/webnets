@@ -115,13 +115,13 @@ class Tell140Page_Controller extends ContentController {
 	   	self::sessionInfo('loggedInAs',true,0);
 		$this->mentee = false;
 		$this->profile=Singleton('Profile');
-		$this->profile->Nickname = "unknown user";
+		$this->profile->Name = "unknown user";
 	       	error_log("State = anonymous, Got Socialite profile id = NULL" );
 		break;
 	   case 'mentored':
 		   $menteeID = Session::get('socialiteProfileID');
 		   $this->profile = DataObject::get_by_id('Profile',$menteeID); 
-		   $this->mentee = TweetUser::getTweetUser($this->profile->Nickname);
+		   $this->mentee = TweetUser::getTweetUser($this->profile->Name);
 		   if ( ! $this->profile->MemberID) {
 			   // the user does NOT have an existing account with us
 			   error_log("State = mentored, Got Socialite profile id = " . $menteeID . " " . $this->mentee->screen_name );
@@ -133,7 +133,8 @@ class Tell140Page_Controller extends ContentController {
 		   break;
 	   case 'loggedIn':
 		   $this ->profile= DataObject::get_one('Profile', 'MemberID=' . $loginID);
-		   $this->mentee = TweetUser::getTweetUser($this->profile->Nickname);
+		   Debug::show($this->profile);
+		   $this->mentee = TweetUser::getTweetUser($this->profile->Name);
 		   self::sessionInfo('socialiteProfileID',true,0);
 		   break;
 	   default:
@@ -143,7 +144,7 @@ class Tell140Page_Controller extends ContentController {
 
 	   }
 	   $sesslog = Session::get('loggedInAs');
-	       	error_log(">>>> State = $userState, Member ID = ". $this->profile->MemberID ." name=". $this->profile->Nickname . " session login is ". $sesslog);
+	       	error_log(">>>> State = $userState, Member ID = ". $this->profile->MemberID ." name=". $this->profile->Name . " session login is ". $sesslog);
       
 /*
 	    if (!$this->profile instanceOf Profile) {
@@ -302,14 +303,14 @@ class Tell140Page_Controller extends ContentController {
 		  ."Security/login" . "'>Login?</a>";
 		 break;
 	      case 'loggedIn':
-		   $name = $this->profile->Nickname;
+		   $name = $this->profile->Name;
 		   $form= "Welcome back, $name |<a href='"
 		     . Director::baseURL() . "user-profile"
 		     . "'>Your Profile</a>|<a href='".Director::baseURL()
 		     .'home/logout' ."'>Logout.</a>";
 		 break;
 	      case 'mentored':
-		  $name = $this->profile->Nickname;
+		  $name = $this->profile->Name;
 		  $form=  "Hello $name, would you like to <a href='"
 		     . Director::baseURL() . "sign-up'>Sign up</a>"
 		     . "|<a href='".Director::baseURL()

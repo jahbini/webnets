@@ -119,10 +119,10 @@ class ProfilePage_Controller extends TagWatch {
 		   case 'anonymous':
 		      Page_Controller::sessionInfo('UserState',true,'mentored');
 		     // create a socialite reference a dummy profile, that has links to the Standard Queries
-		     $pro = DataObject::get_one('Profile','`Nickname`="'. $new_pen->screen_name  .'"' );
+		     $pro = DataObject::get_one('Profile','`Name`="'. $new_pen->screen_name  .'"' );
 		     if (!$pro) {
 			$pro = new Profile();
-			$pro -> Nickname = $new_pen->screen_name;
+			$pro -> Name = $new_pen->screen_name;
 			$pro -> write();
 		     }
 		     $this->profile = $this->mentee = $pro;
@@ -605,8 +605,8 @@ error_log("in " . __CLASS__. " Method " . __METHOD__ . " Line=" . __LINE__ );
 // the next line is a hack to fix a broken admin group: WHAT A HASSLE!!!
 //Security::findAnAdministrator('jahbini','password');
 if (Permission::check("MENTOR") ) $userClass = "Mentor";
-   $nickname = new TextField( $name = "NickName" , $title= "Your user name as a ". $userClass,$this->Profile()->Nickname);
-   $f->push( $nickname -> performReadOnlyTransformation());
+   $name = new TextField( $name = "Name" , $title= "Your user name as a ". $userClass,$this->Profile()->Name);
+   $f->push( $name -> performReadOnlyTransformation());
    $f->push(new TextField( $name = "FirstName" , $title= "First name"));
    $f->push(new TextField("Surname", "Last Name"));
    $f->push(new PointyEmailField("Email", "Email address", $this->Profile(true)->Email));

@@ -2,3 +2,4 @@
 assets/*
 .project
 .mergesources.yml
+.DS_Store

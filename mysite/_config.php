@@ -14,13 +14,7 @@ global $consumer_secret;
 // http://doc.silverstripe.com/doku.php?id=devmode
 // for a description of what dev mode does.
 Director::set_dev_servers(array(
-	'powerstation.411-reviews.com',
-	'hnl.powerstation.411-reviews.com',
-	'tell140.com',
-	'localhost',
-	'hnl.localhost',
-	'governot.localhost',
-	'net.local',
+	'webnets',
 	'127.0.0.1',
 ));
 
@@ -34,12 +28,26 @@ Director::set_dev_servers(array(
 	  $names = explode ('.', $host );
   }
 
+// strip off the trailing .com or .mobi -- 
   $comMobi= array_pop($names);
+
   global $MentorLocation;
   $MentorLocation = 'en';
   global $MentorName;
   $MentorName = '';
 
+global $wantedSubDomain;
+  $wantedSubDomain = array_shift($names);
+  if (strcasecmp($wantedSubDomain,"www") == 0) $wantedSubDomain = array_shift($names);
+if (!$wantedSubDomain) $wantedSubDomain= 'generic';
+switch ($wantedSubDomain) {
+case 'webnets': break;
+default: $wantedSubDomain = 'generic';
+}
+
+//echo("local group is $localGroup");
+//die();
+/*
   $prefix = array_shift($names);
   if (strcasecmp($prefix,"www") == 0) $prefix = array_shift($names);
   if($prefix == "powerstation") $prefix = '';
@@ -77,7 +85,7 @@ Director::set_dev_servers(array(
 	  }
 	  }
   }
-
+ */
 if (getenv('DREAMHOST') ) {
 if(Director::isLive()) {
 	Debug::send_errors_to("error@kegare.org",true);
@@ -115,7 +123,7 @@ Security::setDefaultAdmin('jahbini','password');
 
 $databaseConfig = array(
 	"type" => "MySQLDatabase",
-	"server" => "127.0.0.1:3306", 
+	"server" => "p:127.0.0.1:3306", 
 	"username" => "jahbini", 
 	"password" => "G3tTh1n", 
 	"database" => "webnets"
@@ -137,9 +145,6 @@ include_once("code/models/tweetGathering/TwitterQuery.php");
 //include_once("code/background/DoToDoItem.php");
 include_once("code/models/tweetGathering/Tweet.php");
 //include_once("code/auth/twitterOAuth.php");
-// This line set's the current theme. More themes can be
-// downloaded from http://www.silverstripe.com/themes/
-//SSViewer::set_theme('blackcandy');
 
 //Director::addRules(60,array( 'tag//$ID' => 'TagPage' ) );
 Director::addRules(60,array( 'Test//$action/$ID/$who' => 'Test' ) );
@@ -160,6 +165,7 @@ function &_v($parent,$index,$kind = "stdClass",$fail=true){
 	// we return false if the caller wants to suppress the error
 	return $fail;
 }
+$_GET['isDev']=1;
 
 Security::setDefaultAdmin('jahbini','password');
 function _e($msg) {user_error($msg,E_USER_ERROR);}

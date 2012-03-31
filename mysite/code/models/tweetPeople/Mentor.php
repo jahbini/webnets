@@ -1,6 +1,17 @@
 <?php
 /* vi:sts=3:sw=3:ts=3:filetype=php:
  */
+class MentorNames extends ModelAdmin {
+   
+  public static $managed_models = array(
+      'Mentor'
+   );
+ 
+  static $url_segment = 'Mentors'; // will be linked as /admin/products
+  static $menu_title = 'edit Mentors';
+ 
+}
+
 class Mentor extends UsersPenName {
 	// a birds of a feather collector
 	static $db = array ('GeoLocation'=>'Varchar','Salutation' => 'Varchar','Interaction'=> 'Boolean' );
@@ -9,6 +20,10 @@ class Mentor extends UsersPenName {
 	static $indexes = array ('GeoLocation' => true);
 	
 	protected static $mentor_location = "";
+  function getCMSFields(){              
+	 $fields = parent::getCMSFields();
+	 return formUtility::removeFields($fields,array('Interaction'));
+	}
 	static function setMentorLocation($location) {
 		if(strlen($location) == 2) {
 			//$location = 'lang:' . $location;
@@ -199,10 +214,10 @@ JSON
 				$member -> write();
 			}
 
-			$profile = DataObject::get_one('Profile', "`Nickname`='" . $name . "'");
+			$profile = DataObject::get_one('Profile', "`Name`='" . $name . "'");
 			if(!$profile) {
 				$profile = new Profile();
-				$profile -> Nickname = $name;
+				$profile -> Name = $name;
 				$profile -> MemberID = $member -> ID;
 				$profile -> allow = 'OK';
 				$profile ->write();

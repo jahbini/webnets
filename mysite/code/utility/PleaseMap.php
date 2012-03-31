@@ -32,7 +32,7 @@ class rqNurse {
 
 	function preSchedule(){
 	   $s = $this->scheduler->schedule();
-		   ERROR_LOGGER("Scheduler says $s");
+		   error_log("Scheduler says $s");
 		   return $s;
 	}
 
@@ -406,6 +406,7 @@ class RestfulService_Response extends SS_HTTPResponse {
 	}
 	
 	function __construct($body, $statusCode = 200, $headers = null) {
+		Debug::show ("BODY = $body");
 		$this->setbody($body);
 		$this->setStatusCode($statusCode);
 		$this->headers = $headers;
@@ -498,6 +499,18 @@ class SaneResponse extends RestfulService_Response {
 		return $as;
 	}
 }
+class formUtility {
+	/**
+	 * remove fields from a form by array
+	 */
+     static function &removeFields(&$fields,$removes){
+		           foreach($removes as $erase) {
+						              $fields->removeByName($erase);
+										           }  
+					        return $fields;
+					     }  
+}
+
 class PleaseMap {
 	static function map2(&$destination_array,$mapper,$source_array='_POST') {
 		if(is_class($destination) ) {

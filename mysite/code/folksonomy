@@ -1,0 +1,13 @@
+<?php
+class Constellation extends ModelAdmin {
+   
+  public static $managed_models = array(
+      'TagGroup',
+      'Tag'
+   );
+ 
+  static $url_segment = 'constellation'; // in the URL under the admin page
+  static $menu_title = 'Constellation';  // ON the admin page menu
+ 
+}
+?>

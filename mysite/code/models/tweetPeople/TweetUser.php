@@ -6,7 +6,7 @@ class TweetUserMaintenance {
 	var $TweetUser;
 
 	function TimeToSchedule($from){
-		if($his->TweetUser instanceOf TweetUser) {
+		if($this->TweetUser instanceOf TweetUser) {
 			return $this->TweetUser->TimeToSchedule($from);
 		}
 		return 15*60 + $from;  // in 15 minutes, OK?
@@ -15,7 +15,7 @@ class TweetUserMaintenance {
 	function evaluateUser () {
 		while(1) {
 			if( DoToDoItem::triggerWatchDog()) {
-				error_log("Break on watchdog");
+				error_log("break on watchdog");
 				break;
 			}
 			$tu = DataObject::get_one('TweetUser', 'evaluate=true');
@@ -50,10 +50,22 @@ class TweetUserMaintenance {
 	}
 }
 
+class TweetUserAdmin extends ModelAdmin {
+   
+  public static $managed_models = array(
+      'TweetUser'
+   );
+ 
+  static $url_segment = 'TweetUser'; // will be linked as /admin/products
+  static $menu_title = 'edit tweet Users';
+ 
+}
+
 
 class TweetUser extends DataObject {
 	static $api_access=array('view'=>array('screen_name','name','location','description','url','twitter_id','last_tweet','profile_image_id','created_at','friends_count', 'followers_count','statuses_count'));
 
+	static $summary_fields= array('screen_name');
 	static $create_table_options = array('MySQLDatabase' => 'ENGINE=MyISAM'); //InnoDB does not support fulltext search
 	static $db = array (
 	       	'name' => 'Varchar(55)'
@@ -78,7 +90,7 @@ class TweetUser extends DataObject {
 		,'evaluate' => 'Boolean'
 
 		);
-	static $searchable_fields = array('screen_name','twitter_id','statuses_count','friends_count','followers_count','last_tweet','location');
+	static $searchable_fields = array('screen_name','twitter_id','location');
 	static $has_one= array('UserTag'=>'Tag'); // the  screen name of the user this is from (we really should inherit Tag)
 	static $has_many= array('Statuses'=>'Tweet'); // the  Tweets from this user
 	static $indexes = array ('twitter_id' => true, 'received'=>true, 'evaluate'=>true, 'location' => 'fulltext (location)', 'name'=>true, 'screen_name'=> 'unique (screen_name)' ,  'searchfields' => "fulltext (name,screen_name,location)" );
@@ -100,6 +112,12 @@ class TweetUser extends DataObject {
 
 //
 	static $required=false;
+
+	function getCMSFields(){
+		$fields = parent::getCMSFields();
+		return formUtility::removeFields($fields, array('twitter_id','profile_image_url','last_tweet','created_at','friends_count','followers_count','statuses_count','tweet_quality','follow_worthy','quality_time','poison','evaluate','protected','evaluate','UserTagID','received'));
+	}
+
 	function requireDefaultRecords() {
 		if(self::$required ) return;
 		self::$required=true;	
@@ -107,18 +125,18 @@ class TweetUser extends DataObject {
 		ToDo::insureToDoItem('InternalToDo', 'TweetUser', 'maintain');
 	}
 
-	var $scheduler;
+	var $MyScheduler;
 
 	function TimeToSchedule($from){
 		if($this->error == 4)  return ($from + 3600* 24*365);  //a year, no authorization!
 		if($this->error == 3)  return ($from + 3600* 24*365);  //a year, Twitter say No Can Do, Ever!
-		if($his->scheduler instanceOf Scheduler) {
-			return $this->scheduler->TimeToSchedule( 0) + $from; //do not bump the scheduler's competition count
+		if($this->MyScheduler instanceOf Scheduler) {
+			return $this->MyScheduler->TimeToSchedule( 0) + $from; //do not bump MyScheduler's competition count
 		}
 		return 15*60 + $from;  // in 15 minutes, OK?
 	}
 
-	function Follows(){
+	function follows(){
 	return false;
 	}
 
@@ -311,8 +329,8 @@ JS
 	}
 
 	function fillMe( $params) {
-	  	$this->scheduler = IPScheduler::get_IPscheduler();
-	  	$s=$this->scheduler->schedule();
+	  	$this->MyScheduler = IPScheduler::get_IPScheduler();
+	  	$s=$this->MyScheduler->schedule();
 	  	if ($s>0) {
 			return $this;
 		}
@@ -324,7 +342,7 @@ JS
 // make a container for silverStripe's parser
 			$code=$conn->getStatusCode() ;
 			$contents = $conn->getBody();
-			$this ->scheduler-> request_complete($twitter->returnHeaders()) ; 
+			$this ->MyScheduler-> request_complete($twitter->returnHeaders()) ; 
 			if($code != 200)
 			{
 				if (  stristr($contents, "Rate limit exceeded") ) {
@@ -428,7 +446,7 @@ JS
 		if (!$t->UserTagID) {
 			//$t->screen_name = $t->screen_name;
 			if (@$t->screen_name) {
-				$t->setfield('UserTagID', Tag::getTagByName('@'.$t->screen_name,'UserTag')->ID);
+				$t->setField('UserTagID', Tag::getTagByName('@'.$t->screen_name,'UserTag')->ID);
 				$need_write=true;
 			}
 		}
@@ -443,7 +461,7 @@ JS
 			if (@$this->screen_name) {
 				$u=& Tag::getTagByName('@'.$this->screen_name,'UserTag');
 				if (!$u) error_log("Illegal tag generated for TweetUser Record -- E R R O R " .$this->ID);
-				$this->setfield('UserTag', $u);
+				$this->setField('UserTag', $u);
 			}
 		}
 		return $u;
@@ -487,8 +505,8 @@ JS
 //	error_log("in " . __CLASS__. " Method " . __METHOD__ . " Line=" . __LINE__ );
 			$service = "http://twitter.com/statuses/user_timeline/". $this->screen_name ;
 	//error_log("in " . __CLASS__. " Method " . __METHOD__ . " Line=" . __LINE__ );
-	$this->scheduler = IPScheduler::get_IPscheduler();
-	$s=$this->scheduler->schedule();
+	$this->MyScheduler = IPScheduler::get_IPScheduler();
+	$s=$this->MyScheduler->schedule();
 			if ($s>0) {
 				return $this;
 			}
@@ -504,7 +522,7 @@ JS
 //	error_log($twitter->getQueryString(). " User follow Factor evaluation");
 			$conn = SaneResponse::makeSane($jsdata=$twitter->request());
 //	error_log("in " . __CLASS__. " Method " . __METHOD__ . " Line=" . __LINE__ );
-			$this ->scheduler-> request_complete($twitter->returnHeaders()) ; 
+			$this ->MySheduler-> request_complete($twitter->returnHeaders()) ; 
 			$response = $conn->analyze_code();
 			$this->error = $response;
 			if ($response){
@@ -536,14 +554,14 @@ JS
 			if ($msgs && is_array( $msgs)) foreach  ($msgs as $entry) {
 	//error_log("in " . __CLASS__. " Method " . __METHOD__ . " Line=" . __LINE__ );
 				if( DoToDoItem::triggerWatchDog()) {
-					error_log("Break on watchdog");
+					error_log("break on watchdog");
 					break;
 				}
 				// process the tweet
 				$t=Tweet::getTweet($entry->id,false,true);
 				//error_log("new Tweet");
 				if ($t -> fromDB == false && !$t->apiTweet) { // this tweet needs updating,  and author processing
-					$t->apiTweet = true; // we have done the full user proceessing on this guy
+					$t->apiTweet = true; // we have done the full user processing on this guy
 					$u = $entry -> user;
 					$t->Title      = $entry->text;
 					$t->author_name= $u->screen_name;
@@ -579,7 +597,7 @@ JS
 
 	if( $this->created_at ) {    // honeymoon period
 		$when = strtotime($this->created_at);
-		if($when + (3600*24*14) > time() ) { // this user joined only 2 weeks ago
+		if($when + (3600*24*14) > time() ) { // this user joined only 2 weeks prior
 			$fol = 100;
 			$fri = 101;
 		}

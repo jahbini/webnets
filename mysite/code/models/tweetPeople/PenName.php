@@ -9,6 +9,12 @@ class PenName extends TweetUser {
 	static $db = array( 'request_token_secret' => 'Varchar', 'request_token' => 'Varchar(100)', 'Password' => 'Varchar' ,  'LastTweetOut' => 'Datetime');
 	static $has_many=array('Messages'=>'CannedMessage');
 	static $has_one = array('Profile' => 'Profile','Scheduler'=>'Scheduler');
+
+	function getCMSFields(){              
+		 $fields = parent::getCMSFields();
+	       return formUtility::removeFields($fields,array('SchedulerID','request_token_secret','request_token','LastTweetOut'));
+	    }
+
 	function getTitle() {
 		return $this->screen_name;
 	}

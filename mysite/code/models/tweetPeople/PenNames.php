@@ -6,7 +6,7 @@ class PenNames extends ModelAdmin {
    );
  
   static $url_segment = 'pennames'; // will be linked as /admin/products
-  static $menu_title = 'Pen Names';
+  static $menu_title = 'Twitter Names';
  
 }
 ?>

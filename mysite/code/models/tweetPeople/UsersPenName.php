@@ -11,14 +11,31 @@ class UsersPenNameMaintenance {
 	}
 }
 
+class UserPenAdmin extends ModelAdmin {
+   
+  public static $managed_models = array(
+      'UserPenName'
+   );
+ 
+  static $url_segment = 'upen'; // will be linked as /admin/products
+  static $menu_title = 'edit UsersPenName';
+ 
+}
+
+
 class UsersPenName extends PenName {
 	static $db = array ( 'FriendsAsOf' => 'Date', 'FollowersAsOf' => 'Date' ,'TheCut' => 'Float','AutoBuild' => 'Boolean' );
-	//static $indexes = array( 'Leader' => true, 'Follower' => true );
+
 	static $many_many = array( 'Associates' => 'TweetUser',
 		'Orcas' => 'TweetUser');
 
 	static $many_many_extraFields = array('Associates'=> array('FriendshipExtendedOn' => 'Date', 'BFF' => 'Boolean',
 	       	'IFollowDate' => 'Date', 'TheyFollowDate' => 'Date')); 
+
+  function getCMSFields(){              
+	 $fields = parent::getCMSFields();
+	 return formUtility::removeFields($fields,array('FriendsAsOf','FollowersAsOf','TheCut','AutoBuild'));
+	}
 
 	//var $Users;
 	
