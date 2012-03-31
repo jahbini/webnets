@@ -83,8 +83,7 @@ class GroupImportForm extends Form {
 	
 		$this->sessionMessage($msg, 'good');
 		
-		$this->redirectBack();
+		$this->controller->redirectBack();
 	}
 	
 }
-?>

@@ -5,7 +5,7 @@
  * @package sapphire
  * @subpackage security
  */
-class Member extends DataObject {
+class Member extends DataObject implements TemplateGlobalProvider {
 
 	static $db = array(
 		'FirstName' => 'Varchar',
@@ -659,7 +659,7 @@ class Member extends DataObject {
 			$encryption_details = Security::encrypt_password(
 				$this->Password, // this is assumed to be cleartext
 				$this->Salt,
-				$this->PasswordEncryption,
+				($this->PasswordEncryption) ? $this->PasswordEncryption : Security::get_password_encryption_algorithm(),
 				$this
 			);
 
@@ -782,18 +782,6 @@ class Member extends DataObject {
 			
 			$this->Groups()->add($group);
 		}
-	}
-	
-	/**
-	 * Returns true if this user is an administrator.
-	 * Administrators have access to everything.
-	 * 
-	 * @deprecated Use Permission::check('ADMIN') instead
-	 * @return Returns TRUE if this user is an administrator.
-	 */
-	function isAdmin() {
-		Deprecation::notice('2.4', 'Use Permission::check(\'ADMIN\') instead.');
-		return Permission::checkMember($this, 'ADMIN');
 	}
 	
 	/**
@@ -939,25 +927,26 @@ class Member extends DataObject {
 
 
 	/**
-	 * Get a "many-to-many" map that holds for all members their group
-	 * memberships
+	 * Get a "many-to-many" map that holds for all members their group memberships,
+	 * including any parent groups where membership is implied.
+	 * Use {@link DirectGroups()} to only retrieve the group relations without inheritance.
 	 *
 	 * @todo Push all this logic into Member_GroupSet's getIterator()?
 	 */
 	public function Groups() {
 		$groups = new Member_GroupSet('Group', 'Group_Members', 'GroupID', 'MemberID');
-		if($this->ID) $groups->setForeignID($this->ID);
+		$groups->setForeignID($this->ID);
 		
-		// Filter out groups that aren't allowed from this IP
-		$ip = isset($_SERVER['REMOTE_ADDR']) ? $_SERVER['REMOTE_ADDR'] : null;
-		$disallowedGroups = array();
-		foreach($groups as $group) {
-			if(!$group->allowedIPAddress($ip)) $disallowedGroups[] = $groupID;
-		}
-		if($disallowedGroups) $group->where("\"Group\".\"ID\" NOT IN (" .
-			implode(',',$disallowedGroups) . ")");
+		$this->extend('updateGroups', $groups);
 
 		return $groups;
+	}
+
+	/**
+	 * @return ManyManyList
+	 */
+	public function DirectGroups() {
+		return $this->getManyManyComponents('Groups');
 	}
 
 
@@ -1140,12 +1129,15 @@ class Member extends DataObject {
 		// Groups relation will get us into logical conflicts because
 		// Members are displayed within  group edit form in SecurityAdmin
 		$fields->removeByName('Groups');
-		
+
 		if(Permission::check('EDIT_PERMISSIONS')) {
-			$groupsField = new TreeMultiselectField('Groups', false, 'Group');
-			$fields->findOrMakeTab('Root.Groups', singleton('Group')->i18n_plural_name());
-			$fields->addFieldToTab('Root.Groups', $groupsField);
-			
+			$groupsMap = DataList::create('Group')->map('ID', 'Breadcrumbs')->toArray();
+			asort($groupsMap);
+			$fields->addFieldToTab('Root.Main',
+				Object::create('ListboxField', 'DirectGroups', singleton('Group')->i18n_plural_name())
+					->setMultiple(true)->setSource($groupsMap)
+			);
+
 			// Add permission field (readonly to avoid complicated group assignment logic).
 			// This should only be available for existing records, as new records start
 			// with no permissions until they have a group assignment anyway.
@@ -1381,6 +1373,13 @@ class Member extends DataObject {
 		// If can't find a suitable editor, just default to cms
 		return $currentName ? $currentName : 'cms';
 	}
+
+	public static function get_template_global_variables() {
+		return array(
+			'CurrentMember' => 'currentUser',
+			'currentUser'
+		);
+	}
 }
 
 /**
@@ -1424,124 +1423,7 @@ class Member_GroupSet extends ManyManyList {
 		if($allGroupIDs) $this->byIDs($allGroupIDs);
 		else $this->byIDs(array(0));
 	}
-	
-	/**
-	 * @deprecated Use setByIdList() and/or a CheckboxSetField
-	 */
-	function setByCheckboxes(array $checkboxes, array $data) {
-		Deprecation::notice('2.4', 'Use setByIdList() and/or a CheckboxSetField instead.');
-	}
-
-
-	/**
-	 * Allows you to set groups based on a CheckboxSetField
-	 *
-	 * Pass the form element from your post data directly to this method, and
-	 * it will update the groups and add and remove the member as appropriate.
-	 *
-	 * On the form setup:
-	 *
-	 * <code>
-	 * $fields->push(
-	 *   new CheckboxSetField(
-	 *     "NewsletterSubscriptions",
-	 *     "Receive email notification of events in ",
-	 *     $sourceitems = DataObject::get("NewsletterType")->toDropDownMap("GroupID","Title"),
-	 *     $selectedgroups = $member->Groups()->Map("ID","ID")
-	 *   )
-	 * );
-	 * </code>
-	 *
-	 * On the form handler:
-	 *
-	 * <code>
-	 * $groups = $member->Groups();
-	 * $checkboxfield = $form->Fields()->fieldByName("NewsletterSubscriptions");
-	 * $groups->setByCheckboxSetField($checkboxfield);
-	 * </code>
-	 *
-	 * @param CheckboxSetField $checkboxsetfield The CheckboxSetField (with
-	 *                                           data) from your form.
-	 */
-	function setByCheckboxSetField(CheckboxSetField $checkboxsetfield) {
-		// Get the values from the formfield.
-		$values = $checkboxsetfield->Value();
-		$sourceItems = $checkboxsetfield->getSource();
-
-		if($sourceItems) {
-			// If (some) values are present, add and remove as necessary.
-			if($values) {
-				// update the groups based on the selections
-				foreach($sourceItems as $k => $item) {
-					if(in_array($k,$values)) {
-						$add[] = $k;
-					} else {
-						$remove[] = $k;
-					}
-				}
-
-			// else we should be removing all from the necessary groups.
-			} else {
-				$remove = array_keys($sourceItems);
-			}
-
-			if($add)
-				$this->addManyByGroupID($add);
-
-			if($remove)
-				$this->RemoveManyByGroupID($remove);
-
-		} else {
-			USER_ERROR("Member::setByCheckboxSetField() - No source items could be found for checkboxsetfield " .
-								 $checkboxsetfield->getName(), E_USER_WARNING);
-		}
-	}
-
-
-	/**
-	 * @deprecated Use DataList::addMany
-	 */
-	function addManyByGroupID($ids){
-		Deprecation::notice('2.4', 'Use addMany() instead.');
-		return $this->addMany($ids);
-	}
-
-
-	/**
-	 * @deprecated Use DataList::removeMany
-	 */
-	function removeManyByGroupID($groupIds) {
-		Deprecation::notice('2.4', 'Use removeMany() instead.');
-		return $this->removeMany($ids);
-	}
-
-
-	/**
-	 * @deprecated Use DataObject::get("Group")->byIds()
-	 */
-	function getGroupsFromIDs($ids) {
-		Deprecation::notice('2.4', 'Use DataObject::get("Group")->byIds() instead.');
-		return DataObject::get("Group")->byIDs($ids);
-	}
-
-
-	/**
-	 * @deprecated Group.Code is deprecated
-	 */
-	function addManyByCodename($codenames) {
-		Deprecation::notice('2.4', 'Don\'t rely on codename');
-	}
-
-
-	/**
-	 * @deprecated Group.Code is deprecated
-	 */
-	function removeManyByCodename($codenames) {
-		Deprecation::notice('2.4', 'Don\'t rely on codename');
-	}
 }
-
-
 
 /**
  * Form for editing a member profile.
@@ -1557,9 +1439,11 @@ class Member_ProfileForm extends Form {
 		$fields->push(new HiddenField('ID','ID',$member->ID));
 
 		$actions = new FieldList(
- 			$saveAction = new FormAction('dosave',_t('CMSMain.SAVE', 'Save'), null, null, "ss-ui-button ss-ui-action-constructive")
+ 			FormAction::create('dosave',_t('CMSMain.SAVE', 'Save'))
+ 				->addExtraClass('ss-ui-button ss-ui-action-constructive')
+ 				->setAttribute('data-icon', 'accept')
+ 				->setUseButtonTag(true)
 		);
-		$saveAction->addExtraClass('ss-ui-action-constructive');
 		
 		$validator = new Member_Validator();
 		
@@ -1757,29 +1641,6 @@ class Member_Validator extends RequiredFields {
 		}
 
 		return $valid;
-	}
-
-
-	/**
-	 * Check if the submitted member data is valid (client-side)
-	 *
-	 * @param array $data Submitted data
-	 * @return bool Returns TRUE if the submitted data is valid, otherwise
-	 *              FALSE.
-	 */
-	function javascript() {
-		$js = parent::javascript();
-
-		// Execute the validators on the extensions
-		if($this->extension_instances) {
-			foreach($this->extension_instances as $extension) {
-				if(method_exists($extension, 'hasMethod') && $extension->hasMethod('updateJavascript')) {
-					$extension->updateJavascript($js, $this->form);
-				}
-			}
-		}
-
-		return $js;
 	}
 
 }

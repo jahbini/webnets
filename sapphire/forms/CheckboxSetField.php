@@ -135,6 +135,7 @@ class CheckboxSetField extends OptionsetField {
 	
 	function setDisabled($val) {
 		$this->disabled = $val;
+		return $this;
 	}
 	
 	/**
@@ -146,6 +147,7 @@ class CheckboxSetField extends OptionsetField {
 	 */
 	function setDefaultItems($items) {
 		$this->defaultItems = $items;
+		return $this;
 	}
 	
 	/**
@@ -166,6 +168,8 @@ class CheckboxSetField extends OptionsetField {
 		}
 
 		parent::setValue($value, $obj);
+
+		return $this;
 	}
 	
 	/**
@@ -177,15 +181,16 @@ class CheckboxSetField extends OptionsetField {
 	 * @param DataObject $record The record to save into
 	 */
 	function saveInto(DataObject $record) {
-		$fieldname = $this->name ;
-		if($fieldname && $record && ($record->has_many($fieldname) || $record->many_many($fieldname))) {
+		$fieldname = $this->name;
+		$relation = ($fieldname && $record && $record->hasMethod($fieldname)) ? $record->$fieldname() : null;
+		if($fieldname && $record && $relation && $relation instanceof RelationList) {
 			$idList = array();
 			if($this->value) foreach($this->value as $id => $bool) {
 			   if($bool) {
 					$idList[] = $id;
 				}
 			}
-			$record->$fieldname()->setByIDList($idList);
+			$relation->setByIDList($idList);
 		} elseif($fieldname && $record) {
 			if($this->value) {
 				$this->value = str_replace(',', '{comma}', $this->value);

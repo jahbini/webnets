@@ -9,7 +9,7 @@
  * @package sapphire
  * @subpackage control
  */
-class Controller extends RequestHandler {
+class Controller extends RequestHandler implements TemplateGlobalProvider {
 
 	/**
 	 * @var array $urlParams An array of arguments extracted from the URL 
@@ -298,6 +298,23 @@ class Controller extends RequestHandler {
 	public function hasAction($action) {
 		return parent::hasAction($action) || $this->hasActionTemplate($action);
 	}
+
+	/**
+	 * Removes all the "action" part of the current URL and returns the result.
+	 * If no action parameter is present, returns the full URL
+	 * @static
+	 * @return String
+	 */
+	public function removeAction($fullURL, $action = null) {
+		if (!$action) $action = $this->getAction();    //default to current action
+		$returnURL = $fullURL;
+
+		if (($pos = strpos($fullURL, $action)) !== false) {
+			$returnURL = substr($fullURL,0,$pos);
+		}
+
+		return $returnURL;
+	}
 	
 	/**
 	 * Returns TRUE if this controller has a template that is specifically designed to handle a specific action.
@@ -555,7 +572,8 @@ class Controller extends RequestHandler {
 				list($arg, $suffix) = explode('?',$arg,2);
 				$querystrings[] = $suffix;
 			}
-			if($arg) {
+			if((is_string($arg) && $arg) || is_numeric($arg)) {
+				$arg = (string)$arg;
 				if($result && substr($result,-1) != '/' && $arg[0] != '/') $result .= "/$arg";
 				else $result .= (substr($result, -1) == '/' && $arg[0] == '/') ? ltrim($arg, '/') : $arg;
 			}
@@ -566,6 +584,12 @@ class Controller extends RequestHandler {
 		
 		return $result;
 	}
+
+	public static function get_template_global_variables() {
+		return array(
+			'CurrentPage' => 'curr',
+		);
+	}
 }
 
-?>
+

@@ -11,7 +11,7 @@
  * @subpackage control
  * @see Director::direct(),Director::addRules(),Director::set_environment_type()
  */
-class Director {
+class Director implements TemplateGlobalProvider {
 	
 	static private $urlParams;
 
@@ -88,14 +88,7 @@ class Director {
 			@file_get_contents('php://input')
 		);
 
-		// Load the request headers. If we're not running on Apache, then we
-		// need to manually extract the headers from the $_SERVER array.
-		if (function_exists('apache_request_headers')) {
-			$headers = apache_request_headers();
-		} else {
-			$headers = self::extract_request_headers($_SERVER);
-		}
-
+		$headers = self::extract_request_headers($_SERVER);
 		foreach ($headers as $header => $value) {
 			$req->addHeader($header, $value);
 		}
@@ -376,6 +369,7 @@ class Director {
 	 * @return String
 	 */
 	static function protocol() {
+		if(isset($_SERVER['HTTP_X_FORWARDED_PROTOCOL']) && strtolower($_SERVER['HTTP_X_FORWARDED_PROTOCOL']) == 'https') return "https://";
 		return (isset($_SERVER['SSL']) || (isset($_SERVER['HTTPS']) && $_SERVER['HTTPS'] != 'off')) ? 'https://' : 'http://';
 	}
 
@@ -471,7 +465,7 @@ class Director {
 	 */
 	static function makeRelative($url) {
 		// Allow for the accidental inclusion of a // in the URL
-		$url = ereg_replace('([^:])//','\\1/',$url);
+		$url = preg_replace('#([^:])//#', '\\1/', $url);
 		$url = trim($url);
 
 		// Only bother comparing the URL to the absolute version if $url looks like a URL.
@@ -652,7 +646,7 @@ class Director {
 			$matched = true;
 		}
 
-		if($matched && (!isset($_SERVER['HTTPS']) || $_SERVER['HTTPS'] == 'off')) {
+		if($matched && (!isset($_SERVER['HTTPS']) || $_SERVER['HTTPS'] == 'off') && !(isset($_SERVER['HTTP_X_FORWARDED_PROTOCOL']) && strtolower($_SERVER['HTTP_X_FORWARDED_PROTOCOL']) == 'https')) {
 			$destURL = str_replace('http:', 'https:', Director::absoluteURL($_SERVER['REQUEST_URI']));
 
 			// This coupling to SapphireTest is necessary to test the destination URL and to not interfere with tests
@@ -808,19 +802,31 @@ class Director {
 	/**
 	 * This function will return true if the site is in a development environment.
 	 * For information about environment types, see {@link Director::set_environment_type()}.
+	 * @param $dontTouchDB		If true, the database checks are not performed, which allows certain DB checks
+	 *							to not fail before the DB is ready. If false (default), DB checks are included.
 	 */
-	static function isDev() {
+	static function isDev($dontTouchDB = false) {
 		// This variable is used to supress repetitions of the isDev security message below.
 		static $firstTimeCheckingGetVar = true;
+
+		$result = false;
+
+		if(isset($_SESSION['isDev']) && $_SESSION['isDev']) $result = true;
+		if(self::$environment_type && self::$environment_type == 'dev') $result = true;
+
+		if(!empty(Director::$dev_servers))  {
+			Deprecation::notice('3.0', 'Director::$dev_servers doesn\'t work anymore');
+		}
 		
 		// Use ?isDev=1 to get development access on the live server
-		if(isset($_GET['isDev'])) {
+		if(!$dontTouchDB && !$result && isset($_GET['isDev'])) {
 			if(Security::database_is_ready()) {
 				if($firstTimeCheckingGetVar && !Permission::check('ADMIN')){
 					BasicAuth::requireLogin("SilverStripe developer access. Use your CMS login", "ADMIN");
 				}
 				$_SESSION['isDev'] = $_GET['isDev'];
-				if($firstTimeCheckingGetVar) $firstTimeCheckingGetVar = false;
+				$firstTimeCheckingGetVar = false;
+				$result = $_GET['isDev'];
 			} else {
 				if($firstTimeCheckingGetVar && DB::connection_attempted()) {
 	 				echo "<p style=\"padding: 3px; margin: 3px; background-color: orange; 
@@ -832,16 +838,7 @@ class Director {
 			}
 		}
 
-		if(isset($_SESSION['isDev']) && $_SESSION['isDev']) return true;
-
-		if(self::$environment_type) return self::$environment_type == 'dev';
-		
-		// Check if we are running on one of the development servers
-		if(isset($_SERVER['HTTP_HOST']) && in_array($_SERVER['HTTP_HOST'], Director::$dev_servers))  {
-			return true;
-		}
-		
-		return false;
+		return $result;
 	}
 	
 	/**
@@ -872,4 +869,21 @@ class Director {
 		return false;
 	}
 
+	/**
+	 * @return array Returns an array of strings of the method names of methods on the call that should be exposed
+	 * as global variables in the templates.
+	 */
+	public static function get_template_global_variables() {
+		return array(
+			'absoluteBaseURL',
+			'baseURL',
+			'is_ajax',
+			'isAjax' => 'is_ajax',
+			'BaseHref' => 'absoluteBaseURL',    //@deprecated 3.0
+		);
+	}
+
 }
+
+
+

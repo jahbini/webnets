@@ -30,67 +30,38 @@ abstract class DataExtension extends Extension {
 		'searchable_fields' => true,
 		'api_access' => false,
 	);
-	
-	private static $extra_statics_loaded = array();
-	
-	/**
-	 * Load the extra static definitions for the given extension
-	 * class name, called by {@link Object::add_extension()}
-	 * 
-	 * @param string $class Class name of the owner class (or owner base class)
-	 * @param string $extension Class name of the extension class
-	 */
-	public static function load_extra_statics($class, $extension) {
-		if(!empty(self::$extra_statics_loaded[$class][$extension])) return;
-		self::$extra_statics_loaded[$class][$extension] = true;
-		
-		if(preg_match('/^([^(]*)/', $extension, $matches)) {
-			$extensionClass = $matches[1];
-		} else {
-			user_error("Bad extenion '$extension' - can't find classname", E_USER_WARNING);
-			return;
-		}
-		
-		// @deprecated 2.4 - use extraStatics() now, not extraDBFields()
-		if(method_exists($extensionClass, 'extraDBFields')) {
-			Deprecation::notice('2.4', 'DataExtension::extraDBFields() is deprecated. Please use extraStatics() instead.');
+
+
+	static function add_to_class($class, $extensionClass, $args) {
+		if(method_exists($class, 'extraDBFields')) {
 			$extraStaticsMethod = 'extraDBFields';
 		} else {
 			$extraStaticsMethod = 'extraStatics';
 		}
-		
-		// If the extension has been manually applied to a subclass, we should ignore that.
-		if(Object::has_extension(get_parent_class($class), $extensionClass)) return;
 
-		// If there aren't any extraStatics we shouldn't try to load them.
-		if (!method_exists($extensionClass, $extraStaticsMethod) ) return;
-		
-		$statics = call_user_func(array(singleton($extensionClass), $extraStaticsMethod), $class, $extension);
-		
-		if($statics) {
-			foreach($statics as $name => $newVal) {
-				if(isset(self::$extendable_statics[$name])) {
-				
-					// Array to be merged 
-					if(self::$extendable_statics[$name]) {
-						$origVal = Object::uninherited_static($class, $name);
-						// Can't use add_static_var() here as it would merge the array rather than replacing
-						Object::set_static($class, $name, array_merge((array)$origVal, $newVal));
-					
-						// Value to be overwritten
-					} else {
-						Object::set_static($class, $name, $newVal);
-					}
+		$statics = singleton($extensionClass)->$extraStaticsMethod($class, $extensionClass);
+
+		if ($statics) {
+			Deprecation::notice('3.1.0', "$extraStaticsMethod deprecated. Just define statics on your extension, or use add_to_class");
+
+			// TODO: This currently makes extraStatics the MOST IMPORTANT config layer, not the least
+			foreach (self::$extendable_statics as $key => $merge) {
+				if (isset($statics[$key])) {
+					if (!$merge) Config::inst()->remove($class, $key);
+					Config::inst()->update($class, $key, $statics[$key]);
 				}
 			}
-			
+
+			// TODO - remove this
 			DataObject::$cache_has_own_table[$class]       = null;
 			DataObject::$cache_has_own_table_field[$class] = null;
 		}
+
+		parent::add_to_class($class, $extensionClass, $args);
 	}
 	
 	public static function unload_extra_statics($class, $extension) {
-		self::$extra_statics_loaded[$class][$extension] = false;
+		throw new Exception('unload_extra_statics gone');
 	}
 	
 	/**
@@ -241,4 +212,4 @@ abstract class DataExtension extends Extension {
 	}
 
 }
-?>
+

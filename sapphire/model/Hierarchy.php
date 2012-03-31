@@ -24,20 +24,10 @@ class Hierarchy extends DataExtension {
 	
 	function augmentWrite(&$manipulation) {
 	}
-	
-	/**
-	 *
-	 * @param string $class
-	 * @param string $extension
-	 * @return array
-	 */
-	function extraStatics($class=null, $extension=null) {
-		return array(
-			'has_one' => array(
-				// TODO this method is called *both* statically and on an instance
-				"Parent" => ($class) ? $class : $this->owner->class
-			)
-		);
+
+	static function add_to_class($class, $extensionClass, $args) {
+		Config::inst()->update($class, 'has_one', array('Parent' => $class));
+		parent::add_to_class($class, $extensionClass, $args);
 	}
 
 	/**
@@ -562,9 +552,9 @@ class Hierarchy extends DataExtension {
 		$children->dataQuery()->setQueryParam('Versioned.stage', 'Live');
 		
 		if($onlyDeletedFromStage) {
-			// Note that this makes a second query, and could be optimised to be a joi;
+			// Note that this makes a second query, and could be optimised to be a join
 			$stageChildren = DataObject::get($baseClass)
-				->where("\"{$baseClass}\".\"ParentID\" = $id AND \"{$baseClass}\".\"ID\" != $id");
+				->where("\"{$baseClass}\".\"ID\" != $id");
 			$stageChildren->dataQuery()->setQueryParam('Versioned.mode', 'stage');
 			$stageChildren->dataQuery()->setQueryParam('Versioned.stage', '');
 			
@@ -604,6 +594,21 @@ class Hierarchy extends DataExtension {
 		}
 		
 		return $ancestors;
+	}
+
+	/**
+	 * Returns a human-readable, flattened representation of the path to the object,
+	 * using its {@link Title()} attribute.
+	 * 
+	 * @param String
+	 * @return String
+	 */
+	public function getBreadcrumbs($separator = ' &raquo; ') {
+		$crumbs = array();
+		$ancestors = array_reverse($this->owner->getAncestors()->toArray());
+		foreach($ancestors as $ancestor) $crumbs[] = $ancestor->Title;
+		$crumbs[] = $this->owner->Title;
+		return implode($separator, $crumbs);
 	}
 	
 	/**
@@ -677,4 +682,4 @@ class Hierarchy extends DataExtension {
 	}
 }
 
-?>
+

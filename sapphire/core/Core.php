@@ -139,7 +139,7 @@ if(!isset($_SERVER['HTTP_HOST'])) {
  */
 if(!defined('BASE_PATH')) {
 	// Assuming that this file is sapphire/core/Core.php we can then determine the base path
-	define('BASE_PATH', rtrim(dirname(dirname(dirname(__FILE__)))), DIRECTORY_SEPARATOR);
+	define('BASE_PATH', rtrim(dirname(dirname(dirname(__FILE__))), DIRECTORY_SEPARATOR));
 }
 if(!defined('BASE_URL')) {
 	// Determine the base URL by comparing SCRIPT_NAME to SCRIPT_FILENAME and getting common elements
@@ -196,6 +196,11 @@ define('PR_LOW',10);
 increase_memory_limit_to('64M');
 
 /**
+ * Ensure we don't run into xdebug's fairly conservative infinite recursion protection limit
+ */
+increase_xdebug_nesting_level_to(200);
+
+/**
  * Set default encoding
  */
 if(function_exists('mb_http_output')) {
@@ -207,16 +212,27 @@ if(function_exists('mb_http_output')) {
 ///////////////////////////////////////////////////////////////////////////////
 // INCLUDES
 
-set_include_path(BASE_PATH . '/sapphire' . PATH_SEPARATOR
-	. BASE_PATH . '/sapphire/parsers' . PATH_SEPARATOR
-	. BASE_PATH . '/sapphire/thirdparty' . PATH_SEPARATOR
-	. get_include_path());
+if(defined('CUSTOM_INCLUDE_PATH')) {
+	$includePath = CUSTOM_INCLUDE_PATH . PATH_SEPARATOR
+		. BASE_PATH . '/sapphire' . PATH_SEPARATOR
+		. BASE_PATH . '/sapphire/parsers' . PATH_SEPARATOR
+		. BASE_PATH . '/sapphire/thirdparty' . PATH_SEPARATOR
+		. get_include_path();
+} else {
+	$includePath = BASE_PATH . '/sapphire' . PATH_SEPARATOR
+		. BASE_PATH . '/sapphire/parsers' . PATH_SEPARATOR
+		. BASE_PATH . '/sapphire/thirdparty' . PATH_SEPARATOR
+		. get_include_path();
+}
+
+set_include_path($includePath);
 
 // Include the files needed the initial manifest building, as well as any files
 // that are needed for the boostrap process on every request.
 require_once 'cache/Cache.php';
 require_once 'core/Object.php';
 require_once 'core/ClassInfo.php';
+require_once 'view/TemplateGlobalProvider.php';
 require_once 'control/Director.php';
 require_once 'dev/Debug.php';
 require_once 'filesystem/FileFinder.php';
@@ -241,6 +257,10 @@ $manifest = new SS_ClassManifest(BASE_PATH, false, $flush);
 $loader = SS_ClassLoader::instance();
 $loader->registerAutoloader();
 $loader->pushManifest($manifest);
+
+// Now that the class manifest is up, load the configuration
+$configManifest = new SS_ConfigManifest(BASE_PATH, false, $flush);
+Config::inst()->pushConfigManifest($configManifest);
 
 SS_TemplateLoader::instance()->pushManifest(new SS_TemplateManifest(
 	BASE_PATH, false, isset($_GET['flush'])
@@ -420,6 +440,19 @@ function set_increase_memory_limit_max($memoryLimit) {
 function get_increase_memory_limit_max() {
 	global $_increase_memory_limit_max;
 	return $_increase_memory_limit_max;
+}
+
+/**
+ * Increases the XDebug parameter max_nesting_level, which limits how deep recursion can go.
+ * Only does anything if (a) xdebug is installed and (b) the new limit is higher than the existing limit
+ *
+ * @param int $limit - The new limit to increase to
+ */
+function increase_xdebug_nesting_level_to($limit) {
+	if (function_exists('xdebug_enable')) {
+		$current = ini_get('xdebug.max_nesting_level');
+		if ((int)$current < $limit) ini_set('xdebug.max_nesting_level', $limit);
+	}
 }
 
 /**

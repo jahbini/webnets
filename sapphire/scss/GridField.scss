@@ -8,14 +8,28 @@
  */
 
 @import "compass/css3";
+@import "compass/css3/images";
+@import "compass/css3/text-shadow";
+@import "compass/css3/border-radius";
 
 $gf_colour_gradient_light: #B1C0C5;
 $gf_colour_gradient_dark: #7F9198;
 $gf_colour_base: #95a5ab;
 $gf_colour_header_border: #819198;
-$gf_colour_border: #DBDDDD;
-$gf_colour_zebra: #f2f9fd;
+$gf_colour_subheader: #BAC8CE;
+$gf_colour_border: rgba(0,0,0,.1);
+$gf_colour_zebra: #F0F4F7;
+$gf_colour_font: #666;
+$gf_colour_text_shadow: rgba(0,0,0,.3);
 $gf_border_radius:	7px;
+$gf_color_border_filter_button: #9A9A9A;
+$gf_color_button: #e6e6e6;
+$gf_color_button_filter_hover: #338DC1;
+$gf_color_button_reset_hover: #FF0000;
+$color-text-light: white;
+
+$gf_grid_y:	12px;
+$gf_grid_x:	16px;
 
 @mixin box-shadow-none {
 	-moz-box-shadow: none;
@@ -23,44 +37,67 @@ $gf_border_radius:	7px;
 	box-shadow: none;
 }
 
-@mixin gridfield-gradient-top {
-	background: $gf_colour_gradient_light;
-	background: -moz-linear-gradient($gf_colour_gradient_light 20%, $gf_colour_gradient_dark); /* FF3.6+ */
-	background: -webkit-gradient(linear, left top, left bottom, color-stop(20%,$gf_colour_gradient_light), color-stop(80%,$gf_colour_gradient_dark)); /* Chrome,Safari4+ */
-	background: -webkit-linear-gradient(top, $gf_colour_gradient_light 20%,$gf_colour_gradient_dark 80%); /* Chrome10+,Safari5.1+ */
-	background: -o-linear-gradient(top, $gf_colour_gradient_light 20%,$gf_colour_gradient_dark 80%); /* Opera 11.10+ */
-	filter: progid:DXImageTransform.Microsoft.gradient(GradientType=0,startColorstr='#{$gf_colour_gradient_light}', endColorstr='#{$gf_colour_gradient_dark}');	/* IE5.5+ */	
-	background: -ms-linear-gradient(top, $gf_colour_gradient_light 20%,$gf_colour_gradient_dark 80%); /* IE10+ */	
-	background: linear-gradient(top, $gf_colour_gradient_light 20%,$gf_colour_gradient_dark 80%); /* W3C */	
-}
-@mixin gridfield-gradient-bottom {
-	background: $gf_colour_gradient_dark;
-	background: -moz-linear-gradient($gf_colour_gradient_dark 20%, $gf_colour_gradient_light); /* FF3.6+ */
-	background: -webkit-gradient(linear, left top, left bottom, color-stop(20%,$gf_colour_gradient_dark), color-stop(80%,$gf_colour_gradient_light)); /* Chrome,Safari4+ */
-	background: -webkit-linear-gradient(top, $gf_colour_gradient_dark 20%,$gf_colour_gradient_light 80%); /* Chrome10+,Safari5.1+ */
-	background: -o-linear-gradient(top, $gf_colour_gradient_dark 20%,$gf_colour_gradient_light 80%); /* Opera 11.10+ */
-	filter: progid:DXImageTransform.Microsoft.gradient(GradientType=0,startColorstr='#{$gf_colour_gradient_dark}', endColorstr='#{$gf_colour_gradient_light}');	/* IE5.5+ */
-	background: -ms-linear-gradient(top, $gf_colour_gradient_dark 20%,$gf_colour_gradient_dark 80%); /* IE10+ */
-	background: linear-gradient(top, $gf_colour_gradient_dark 20%,$gf_colour_gradient_light 80%); /* W3C */	
-}
-
 .cms {
-	table.ss-gridfield.field {
+	.ss-gridfield {
+		& > div {
+			margin-bottom: $gf_grid_y*3;
+		}
+
+		&[data-selectable] {
+			tr.ui-selected, tr.ui-selecting {
+				background: #FFFAD6 !important;
+			}
+
+			td {
+				cursor: pointer;
+			}
+		}
+
+		span button#action_gridfield_relationfind {
+	 		display:none; //hides find button - redundant functionality
+	 	}
+
+	 	p button#action_export {
+			margin-top:$gf_grid_y;
+			span.btn-icon-download-csv {
+				height:17px; //exact height of icon
+			}
+			span.ui-button-text {
+				padding-left:26px; //to accomodate wider export icon
+			} 
+	 	}
+	}
+	
+	.ss-gridfield {
+		.add-existing-autocompleter {
+			input.relation-search {
+				width: 380px;
+			}
+			width: 500px;
+		}
+	}
+
+	table.ss-gridfield-table {
+		display: table; 
 		box-shadow: none;		
 		padding: 0;
-		margin: 20px 0 0 0;
 		border-collapse: separate;	
 		border-bottom: 0 none;				
+		width: 100%;
 
 		thead {
 			color: darken($gf_colour_base, 50%);	
 			background: transparent;
+			tr.filter-header {
+				.fieldgroup {
+					max-width:$gf_grid_x*32; //max width 512px
+				}
+			}
 		}
 		
 		tbody {
 			background: #FFF;
 			td {
-				/* Emulate a link by default */
 				button {
 					border: none;
 					background: none;
@@ -68,7 +105,26 @@ $gf_border_radius:	7px;
 					padding: 0;
 					width: auto;
 					text-shadow: none;
+					&.ui-state-hover {
+						background:none;
+						@include box-shadow-none;
+					}
+					&.ui-state-active {
+						border:none;
+						@include box-shadow-none;
+					}
+				}
+				a.edit-link {
+					display:inline-block;
+					width:$gf_grid_x;
+					height:20px; //min height to fit the edit icon
+					text-indent:-9999em;
+					background: url(../images/icons/document--pencil.png) no-repeat 0 1px;
 				}				
+
+				&.col-buttons {
+					white-space: nowrap;
+				}
 			}			
 		}
 
@@ -78,15 +134,46 @@ $gf_border_radius:	7px;
 				td {
 					background: $gf_colour_base;
 					padding: .7em;
+					border-bottom: 1px solid rgba(0,0,0,.1);
 				}
 			}
 		}
 		
-		tr {			
-			&.sortable-header {
+		tr {	
+			&.title {
+				@include border-top-radius($gf_border_radius);
 				th {
+					position: relative;
 					background: $gf_colour_gradient_dark;
+					border-top: 1px solid $gf_colour_border;
+					padding: 5px;
+					min-height: 40px; //this is to accomodate the add new button.
+					@include background-image(linear-gradient($gf_colour_gradient_light, $gf_colour_gradient_dark));
+					@include border-top-radius($gf_border_radius);
+					@include single-text-shadow($gf_colour_text_shadow, 0px, -1px, 0);
+					h2{
+						padding: 0px;
+						font-size: $gf_grid_y*1.4;
+						color:#fff;
+						margin:3px 8px 0;
+						display:inline-block;
+					}
+					.right > * {
+						float: right;
+						font-size: $gf_grid_y*1.2;
+					}
+					.left > * {
+						float: left;
+						font-size: $gf_grid_y*1.2;
+					}
 				}
+			}	
+			&.sortable-header {
+				background: $gf_colour_subheader;	
+				th{
+					padding: 0px;
+				}
+				
 			}			
 			&:hover {
 				background: #FFFAD6 !important;
@@ -101,32 +188,33 @@ $gf_border_radius:	7px;
 					border-bottom: none;
 				}
 			}
+			&.even {
+				background: $gf_colour_zebra;
+			}
+			
 			th {
 				font-weight: bold;
-				font-size: 12px;
+				font-size: $gf_grid_y;
 				color: #FFF;
-				padding: 0;	
-				border-right: 1px solid #85959C;
-				height: 20px;
-				
-				/* Makes it appear as though the text sits over the boundary of the two <tr>'s in <thead> */
-				span {
-					display: block;
-					position: relative;
-					left: 20px;
-					top: -7px;
-					width: 100%;
+				padding: 5px;
+				border-right: 1px solid $gf_colour_border;
+				&.main:first-child{
+					//@include border-top-left-radius($gf_border_radius);
+				}
+				&.main:last-child{
+					//@include border-top-right-radius($gf_border_radius);
 				}
 				div {
 					&.fieldgroup,&.fieldgroup-field {
-						width: auto;
+						width: 100%;
+						position:relative;
 					}
 					&.fieldgroup {
-						min-width: 200px;
+						min-width: $gf_grid_x*12.5;
+						padding-right:0;
 					}
 				}
 				&.extra,&.action {
-					background: $gf_colour_gradient_dark;
 					padding: 0;
 					cursor: default;
 					button,button:hover {
@@ -136,14 +224,35 @@ $gf_border_radius:	7px;
 						}
 					}
 				}
+				&.main{
+					border-top: 1px solid $gf_colour_border;
+					color:#fff;
+					background: darken($gf_colour_subheader,10%);
+					border-bottom: 1px solid $gf_colour_border;
+					span{
+						@include single-text-shadow($gf_colour_text_shadow, 0px, -1px, 0);
+					}
+				}
 				&.extra {
-					text-align: center;
-					@include gridfield-gradient-top;					
+					background: $gf_colour_subheader;		
+					padding: 5px;	
+					border-top:	$gf_colour_text_shadow;
 					span {
 						width: auto;
 						display: inline;
 						position: static;
+						input {
+							height:28px; //height of input field - to match design.
+						}
 					}
+					button.ss-ui-button {
+						padding: .3em;
+						line-height: 1;
+						@include box-shadow-none; 
+						position: relative;
+						border-bottom-width: 0;	
+						@include border-radius(2px, 2px);			
+					}				
 				}
 				&.action {
 					border-right: 0;
@@ -154,66 +263,200 @@ $gf_border_radius:	7px;
 				&.last {
 					@include border-top-right-radius($gf_border_radius);
 				}
-				button,button:hover {
-					font-size: 12px;
-					margin-left: -.9em;
-					border-bottom: 0;
-					border-bottom-left-radius: 0;
-					border-bottom-right-radius: 0;					
-					&.ss-gridfield-sort {
-						text-align: left;
-						padding: 0;
-						color: #FFF;
-						width: 95%;
-						background: transparent;
-						border: 0 none;
-						@include box-shadow-none;
-						text-shadow: none;
-					}
-				}
+				
 				button {
 					&:hover {
-						color: #CCC !important; /* Not sure why IE think it needs this */
-					}					
+						color: #ccc !important; /* Not sure why IE think it needs this */ 
+					}
+					&.ss-gridfield-sort:hover {
+						color: #fff !important;
+						@include box-shadow-none; 
+					}
+					&.ss-gridfield-sort {
+						background: transparent url(../images/arrows.png) no-repeat right 6px;
+						border:none;	
+						width:100%;
+						text-align: left;
+						padding: 4px 0;
+						@include single-text-shadow($gf_colour_text_shadow, 0px, -1px, 0);
+						color: #fff;
+						@include border-radius(0);
+						&:hover {
+							background-position: right -34px;
+						}
+						&.ss-gridfield-sorted-desc {
+							background-position: right -72px;
+						}
+						&.ss-gridfield-sorted-asc {
+							background-position: right -116px;
+						}
+					}
+					&.ss-gridfield-button-filter.ss-ui-button{
+						position:absolute;
+						right:5px; //positions filter button in correct position on top of input field
+						top:-28px;
+						display:block;
+						text-indent:-9999em;
+						width:30px; 
+						height:28px; //match the height of the input field
+						border: {
+							top-left-radius:0px;
+							bottom-left-radius:0px;
+							top-right-radius:4px;
+							bottom-right-radius:4px;
+							bottom-width:1px;
+							color:$gf_color_border_filter_button;
+						}
+						@include background (url(../images/icons/filter-icons.png) no-repeat -40px 6px,
+							linear-gradient(
+								lighten($gf_color_button, 10%),
+								darken($gf_color_button, 5%)
+							));
+						&.hover-alike:active {
+							@include background (url(../images/icons/filter-icons.png) no-repeat -16px 6px,
+							linear-gradient(
+								lighten($gf_color_button_filter_hover, 5%), 
+								darken($gf_color_button_filter_hover, 5%)
+							));
+							@include box-shadow(inset 0 1px 3px rgb(23, 24, 26), 0 1px 0 rgba(255, 255, 255, .6));
+						}
+						&.hover-alike {
+							@include background (url(../images/icons/filter-icons.png) no-repeat -16px 6px,
+							linear-gradient(
+								lighten($gf_color_button_filter_hover, 5%), 
+								darken($gf_color_button_filter_hover, 5%)
+							));
+						}
+					}
+					&.ss-gridfield-button-reset.ss-ui-button{
+						position:absolute;
+						right:34px; //positions reset button in correct position on top of input field and to the left of the filter button
+						top:-28px;
+						display:block;
+						text-indent:-9999em;
+						width:30px;
+						height:28px; //match the height of the input field
+						float:right;
+						border: {
+							radius:0px;
+							bottom-width:1px;
+							color:$gf_color_border_filter_button;
+						}
+						@include background (url(../images/icons/filter-icons.png) no-repeat 8px 5px,
+							linear-gradient(color-stops(
+								lighten($gf_color_button, 10%),
+								darken($gf_color_button, 5%)
+							))
+						);
+						&.filtered:hover {
+							@include background (url(../images/icons/filter-icons.png) no-repeat 8px -17px,
+							linear-gradient(
+								$gf_color_button_reset_hover, 
+								darken($gf_color_button_reset_hover, 10%)
+							));
+						}
+						&.filtered:active {
+							@include background (url(../images/icons/filter-icons.png) no-repeat 8px -17px,
+							linear-gradient(
+								$gf_color_button_reset_hover, 
+								darken($gf_color_button_reset_hover, 10%)
+							));
+							@include box-shadow(inset 0 1px 3px rgb(23, 24, 26), 0 1px 0 rgba(255, 255, 255, .6));
+						}
+					}		
 				}
-				&.extra button.ss-ui-button {
-					padding: .3em;
-					line-height: 1;
-					@include box-shadow-none;
-					position: relative;
-					top: -24px;
-					border: $gf_colour_gradient_light solid 10px;
-					border-bottom-width: 0;					
-				}				
+
 				input {
 					&.ss-gridfield-sort {
-						position: relative;
-						top: -24px;
 						padding: 2px;
-						width: 65%;
-						margin: 0 auto;
-						border: $gf_colour_gradient_light solid 10px;
-						border-bottom: 0;
-						border-bottom-left-radius: 0;
-						border-bottom-right-radius: 0;
 						&:focus {
 							@include box-shadow-none;
 						}
+
 					}
 				}
+
+				span.non-sortable {
+					padding:1em 1em; 
+					display:block;
+				}
 			}
+
 			td {
 				border-right: 1px solid $gf_colour_border;
-				border-bottom: 1px solid $gf_colour_border;
-				padding: 10px;
+				padding: $gf_grid_x/2.5 $gf_grid_y;
+				color: $gf_colour_font;
 				&.bottom-all {
 					@include border-bottom-radius($gf_border_radius);
-					@include gridfield-gradient-bottom;	
+					@include background-image(linear-gradient($gf_colour_gradient_light, $gf_colour_gradient_dark));
+					.datagrid-pagination {
+						padding-top:2px;
+						position:absolute;
+						left:50%;
+						margin-left:-116px; //half the width of .datagrid-pagination - centers pagination
+						.pagination-page-number {
+							color:$color-text-light;
+							input {
+								width:35px; //exact width so that a four digit number can be entered
+								height:18px;  
+								margin-bottom:-6px; //moves input field up to be aligned with the pagination buttons
+								padding:0px;
+							}
+						}
+						button.ss-gridfield-previouspage {
+							@include background (url(../images/icons/pagination-arrows.png) no-repeat -23px 7px);
+							@include box-shadow-none;
+							border:none;
+							width:10px;
+							margin:0 10px;
+							span {
+								text-indent:-9999em;
+							}
+						}
+						button.ss-gridfield-nextpage {
+							@include background (url(../images/icons/pagination-arrows.png) no-repeat -47px 7px);
+							@include box-shadow-none;
+							border:none;
+							width:10px;
+							margin:0 10px;
+							span {
+								text-indent:-9999em;
+							}
+						}
+						button.ss-gridfield-firstpage {
+							@include background (url(../images/icons/pagination-arrows.png) no-repeat 0px 7px);
+							@include box-shadow-none;
+							border:none;
+							width:10px;
+							margin:0 10px;
+							span {
+								text-indent:-9999em;
+							}
+						}
+						button.ss-gridfield-lastpage {
+							@include background (url(../images/icons/pagination-arrows.png) no-repeat -73px 7px);
+							@include box-shadow-none;
+							border:none;
+							width:10px;
+							margin:0 10px;
+							span {
+								text-indent:-9999em;
+							}
+						}
+					}
+					.pagination-records-number {
+						float:right;
+						padding:6px 0;
+						color:$color-text-light;
+					}
 				}
 			}
 			&.last td {
 				border-bottom: 0 none;
 			}
+		}
+		td:first-child, th:first-child{
+			border-left: 1px solid $gf_colour_border;
 		}
 	}
 }

@@ -10,6 +10,7 @@ class CMSPageHistoryController extends CMSMain {
 	static $url_rule = '/$Action/$ID/$VersionID/$OtherVersionID';
 	static $url_priority = 42;
 	static $menu_title = 'History';
+	static $required_permission_codes = 'CMS_ACCESS_CMSMain';
 	
 	static $allowed_actions = array(
 		'VersionsForm',
@@ -81,9 +82,11 @@ class CMSPageHistoryController extends CMSMain {
 		$versionID = ($record) ? $record->Version : $versionID;
 		
 		$form = parent::getEditForm($record, ($record) ? $record->getCMSFields() : null);
+		// Respect permission failures from parent implementation
+		if(!($form instanceof Form)) return $form;
 
 		$form->setActions(new FieldList(
-			$revert = new FormAction('doRollback', _t('CMSPageHistoryController.REVERTTOTHISVERSION', 'Revert to this version'))
+			$revert = FormAction::create('doRollback', _t('CMSPageHistoryController.REVERTTOTHISVERSION', 'Revert to this version'))->setUseButtonTag(true)
 		));
 		
 		$fields = $form->Fields();
@@ -190,42 +193,48 @@ class CMSPageHistoryController extends CMSMain {
 			))->renderWith('CMSPageHistoryController_versions');
 		}
 
+		$fields = new FieldList(
+			new CheckboxField(
+				'ShowUnpublished',
+				_t('CMSPageHistoryController.SHOWUNPUBLISHED','Show unpublished versions'),
+				$showUnpublishedChecked
+			),
+			new CheckboxField(
+				'CompareMode',
+				_t('CMSPageHistoryController.COMPAREMODE', 'Compare mode (select two)'),
+				$compareModeChecked
+			),
+			new LiteralField('VersionsHtml', $versionsHtml),
+			$hiddenID = new HiddenField('ID', false, "")
+		);
+
+		$actions = new FieldList(
+			new FormAction(
+				'doCompare', _t('CMSPageHistoryController.COMPAREVERSIONS','Compare Versions')
+			),
+			new FormAction(
+				'doShowVersion', _t('CMSPageHistoryController.SHOWVERSION','Show Version') 
+			)
+		);
+
+		// Use <button> to allow full jQuery UI styling
+		foreach($actions->dataFields() as $action) $action->setUseButtonTag(true);
+
 		$form = new Form(
 			$this,
 			'VersionsForm',
-			new FieldList(
-				new CheckboxField(
-					'ShowUnpublished',
-					_t('CMSPageHistoryController.SHOWUNPUBLISHED','Show unpublished versions'),
-					$showUnpublishedChecked
-				),
-				new CheckboxField(
-					'CompareMode',
-					_t('CMSPageHistoryController.COMPAREMODE', 'Compare mode (select two)'),
-					$compareModeChecked
-				),
-				new LiteralField('VersionsHtml', $versionsHtml),
-				$hiddenID = new HiddenField('ID', false, "")
-			),
-			new FieldList(
-				new FormAction(
-					'doCompare', _t('CMSPageHistoryController.COMPAREVERSIONS','Compare Versions')
-				),
-				new FormAction(
-					'doShowVersion', _t('CMSPageHistoryController.SHOWVERSION','Show Version') 
-				)
-			)
+			$fields,
+			$actions
 		);
 		
 		$form->loadDataFrom($this->request->requestVars());
 		$hiddenID->setValue($id);
 		$form->unsetValidator();
 		
-		$form->addExtraClass('cms-versions-form'); // placeholder, necessary for $.metadata() to work
-		$form->addExtraClass(Convert::raw2json(array(
-			'link-tmpl-compare' => Controller::join_links($this->Link('compare'), '%s', '%s', '%s'),
-			'link-tmpl-show' => Controller::join_links($this->Link('show'), '%s', '%s'),
-		)));
+		$form
+			->addExtraClass('cms-versions-form') // placeholder, necessary for $.metadata() to work
+			->setAttribute('data-link-tmpl-compare', Controller::join_links($this->Link('compare'), '%s', '%s', '%s'))
+			->setAttribute('data-link-tmpl-show', Controller::join_links($this->Link('show'), '%s', '%s'));
 		
 		return $form;
 	}
@@ -429,5 +438,12 @@ class CMSPageHistoryController extends CMSMain {
 			
 			return $form;
 		}
+	}
+
+	public function Breadcrumbs($unlinked = false) {
+		$crumbs = parent::Breadcrumbs($unlinked);
+		// Remove "root" element, as its already shown in the tree panel
+		$crumbs->shift();
+		return $crumbs;
 	}
 }

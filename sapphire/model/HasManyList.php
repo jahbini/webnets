@@ -26,7 +26,7 @@ class HasManyList extends RelationList {
 		if(is_array($this->foreignID)) {
 			return "\"$this->foreignKey\" IN ('" . 
 				implode("', '", array_map('Convert::raw2sql', $this->foreignID)) . "')";
-		} else if($this->foreignID){
+		} else if($this->foreignID !== null){
 			return "\"$this->foreignKey\" = '" . 
 				Convert::raw2sql($this->foreignID) . "'";
 		}
@@ -39,7 +39,7 @@ class HasManyList extends RelationList {
 	 */
 	function add($item) {
 		if(is_numeric($item)) $item = DataObject::get_by_id($this->dataClass, $item);
-		else if(!($item instanceof $this->dataClass)) user_eror("HasManyList::add() expecting a $this->dataClass object, or ID value", E_USER_ERROR);
+		else if(!($item instanceof $this->dataClass)) user_error("HasManyList::add() expecting a $this->dataClass object, or ID value", E_USER_ERROR);
 
 		// Validate foreignID
 		if(!$this->foreignID) {
@@ -63,7 +63,7 @@ class HasManyList extends RelationList {
 	 * @param $itemID The ID of the item to be removed
 	 */
 	function removeByID($itemID) {
-        $item = $this->byID($item);
+        $item = $this->byID($itemID);
         return $this->remove($item);
     }
     

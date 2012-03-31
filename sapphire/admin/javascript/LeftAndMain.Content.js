@@ -13,31 +13,6 @@
 			onmatch: function() {
 				var self = this;
 				
-				// Listen to tree selection events
-				this.find('.cms-tree').bind('select_node.jstree', function(e, data) {
-					var node = data.rslt.obj, loadedNodeID = self.find(':input[name=ID]').val(), origEvent = data.args[2];
-					
-					// Don't trigger unless coming from a click event.
-					// Avoids problems with automated section switches from tree to detail view
-					// when JSTree auto-selects elements on first load.
-					if(!origEvent) return false;
-					
-					// Don't allow checking disabled nodes
-					if($(node).hasClass('disabled')) return false;
-
-					// Don't allow reloading of currently selected node,
-					// mainly to avoid doing an ajax request on initial page load
-					if($(node).data('id') == loadedNodeID) return;
-
-					var url = $(node).find('a:first').attr('href');
-					if(url && url != '#') {
-						if($(node).find('a:first').is(':internal')) url = $('base').attr('href') + url;
-						$('.cms-container').loadPanel(url);
-					} else {
-						self.removeForm();
-					}
-				});
-				
 				// Force initialization of tabsets to avoid layout glitches
 				this.find('.ss-tabset').redrawTabs();
 				
@@ -183,14 +158,23 @@
 						if(loadResponse !== false) {
 						  self.submitForm_responseHandler(form, xmlhttp.responseText, status, xmlhttp, formData);
 						}
+
+						// Simulates a redirect on an ajax response - just exchange the URL without re-requesting it
+						if(window.History.enabled) {
+							var url = xmlhttp.getResponseHeader('X-ControllerURL');
+							if(url) window.history.replaceState({}, '', url);
+						}
 						
 						// Re-init tabs (in case the form tag itself is a tabset)
 						if(self.hasClass('ss-tabset')) self.removeClass('ss-tabset').addClass('ss-tabset');
-						
+
 						// re-select previously saved tabs
 						$.each(selectedTabs, function(i, selectedTab) {
 							form.find('#' + selectedTab.id).tabs('select', selectedTab.selected);
 						});
+
+						// Redraw the layout
+						$('.cms-container').redraw();
 					}, 
 					dataType: 'html'
 				}, ajaxOptions));
@@ -213,10 +197,19 @@
 			 */
 			submitForm_responseHandler: function(oldForm, data, status, xmlhttp, origData) {
 				if(status == 'success') {
-					var form = this.replaceForm(oldForm, data);
-				
-					Behaviour.apply(); // refreshes ComplexTableField
+					var form, newContent = $(data);
 
+					// HACK If response contains toplevel panel rather than a form, replace it instead.
+					// For example, a page view shows tree + edit form. Deleting this page redirects to
+					// the "pages" overview, which doesn't have a separate tree panel.
+					if(newContent.is('.cms-content')) {
+						$('.cms-content').replaceWith(newContent);
+					} else {
+						form = this.replaceForm(oldForm, newContent);	
+					}
+				
+					if(typeof(Behaviour) != 'undefined') Behaviour.apply(); // refreshes ComplexTableField
+					
 					this.trigger('reloadeditform', {form: form, origData: origData, xmlhttp: xmlhttp});
 				}
 
@@ -261,6 +254,53 @@
 			}
 		});
 	});
+
+	/**
+	 * Load edit form for the selected node when its clicked.
+	 */
+	$('.cms-content .cms-tree').entwine({
+		onmatch: function() {
+			var self = this;
+
+			this._super();
+
+			this.bind('select_node.jstree', function(e, data) {
+				var node = data.rslt.obj, loadedNodeID = self.find(':input[name=ID]').val(), origEvent = data.args[2], container = $('.cms-container');
+				
+				// Don't trigger unless coming from a click event.
+				// Avoids problems with automated section switches from tree to detail view
+				// when JSTree auto-selects elements on first load.
+				if(!origEvent) {
+					return false;
+				}else if($(origEvent.target).hasClass('jstree-icon') || $(origEvent.target).hasClass('jstree-pageicon')){
+					// in case the click is not on the node title, ie on pageicon or dragicon, 
+					return false;
+				}
+				
+				// Don't allow checking disabled nodes
+				if($(node).hasClass('disabled')) return false;
+
+				// Don't allow reloading of currently selected node,
+				// mainly to avoid doing an ajax request on initial page load
+				if($(node).data('id') == loadedNodeID) return;
+
+				var url = $(node).find('a:first').attr('href');
+				if(url && url != '#') {
+
+					if($(node).find('a:first').is(':internal')) url = url = $.path.makeUrlAbsolute(url, $('base').attr('href'));
+					// Reload only edit form if it exists (side-by-side view of tree and edit view), otherwise reload whole panel
+					if(container.find('.cms-edit-form').length) {
+						url += '?cms-view-form=1';
+						container.entwine('ss').loadPanel(url, null, {selector: '.cms-edit-form'});
+					} else {
+						container.entwine('ss').loadPanel(url);	
+					}
+				} else {
+					self.removeForm();
+				}
+			});
+		}
+	});
 	
 	$('.cms-content.loading,.cms-edit-form.loading').entwine({
 		onmatch: function() {
@@ -270,5 +310,5 @@
 			this.find('.cms-content-loading-overlay,.cms-content-loading-spinner').remove();
 		}
 	});
-	
+
 })(jQuery);

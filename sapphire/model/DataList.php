@@ -6,7 +6,7 @@
  * @package    sapphire
  * @subpackage model
  */
-class DataList extends ViewableData implements SS_List {
+class DataList extends ViewableData implements SS_List, SS_Filterable, SS_Sortable, SS_Limitable {
 	/**
 	 * The DataObject class name that this data list is querying
 	 * 
@@ -145,8 +145,14 @@ class DataList extends ViewableData implements SS_List {
 	 * 
 	 * @param string $limit
 	 */
-	public function limit($limit) {
-		$this->dataQuery->limit($limit);
+	public function limit($limit, $offset = 0) {
+		if(!$limit && !$offset) {
+			return $this;
+		}
+		if($limit && !is_numeric($limit)) {
+			Deprecation::notice('3.0', 'Please pass limits as 2 arguments, rather than an array or SQL fragment.');
+		}
+		$this->dataQuery->limit($limit, $offset);
 		return $this;
 	}
 	
@@ -323,6 +329,27 @@ class DataList extends ViewableData implements SS_List {
 		}
 		$this->dataQuery->whereAny($SQL_Statements);
 		return $this;
+	}
+	
+	/**
+	 * This method returns a list does not contain any DataObjects that exists in $list
+	 * 
+	 * It does not return the resulting list, it only adds the constraints on the database to exclude
+	 * objects from $list.
+	 * The $list passed needs to contain the same dataclass as $this
+	 *
+	 * @param SS_List $list
+	 * @return DataList 
+	 * @throws BadMethodCallException
+	 */
+	public function subtract(SS_List $list) {
+		if($this->dataclass() != $list->dataclass()) {
+			throw new InvalidArgumentException('The list passed must have the same dataclass as this class');
+		}
+		
+		$newlist = clone $this;
+		$newlist->dataQuery->subtract($list->dataQuery());
+		return $newlist;
 	}
 	
 	/**
@@ -524,7 +551,8 @@ class DataList extends ViewableData implements SS_List {
 	 * @return DataList
 	 */
 	public function getRange($offset, $length) {
-		return $this->limit(array('start' => $offset, 'limit' => $length));
+		Deprecation::notice("3.0", 'getRange($offset, $length) is deprecated.  Use limit($length, $offset) instead.  Note the new argument order.');
+		return $this->limit($length, $offset);
 	}
 	
 	/**
@@ -792,7 +820,7 @@ class DataList extends ViewableData implements SS_List {
 	 * @return bool
 	 */
 	public function offsetExists($key) {
-	    return ($this->getRange($key, 1)->First() != null);
+	    return ($this->limit(1,$key)->First() != null);
 	}
 
 	/**
@@ -802,7 +830,7 @@ class DataList extends ViewableData implements SS_List {
 	 * @return DataObject
 	 */
 	public function offsetGet($key) {
-	    return $this->getRange($key, 1)->First();
+	    return $this->limit(1, $key)->First();
 	}
 	
 	/**

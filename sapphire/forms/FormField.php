@@ -51,13 +51,6 @@ class FormField extends RequestHandler {
 	protected $leftTitle;
 	
 	/**
-	 * Set the "tabindex" HTML attribute on the field.
-	 *
-	 * @var int
-	 */
-	protected $tabIndex;
-
-	/**
 	 * Stores a reference to the FieldList that contains this object.
 	 * @var FieldList
 	 */ 
@@ -123,7 +116,7 @@ class FormField extends RequestHandler {
 	 * that this ID is included in the field.
 	 */
 	function ID() { 
-		$name = ereg_replace('(^-)|(-$)','',ereg_replace('[^A-Za-z0-9_-]+','-',$this->name));
+		$name = preg_replace('/(^-)|(-$)/', '', preg_replace('/[^A-Za-z0-9_-]+/', '-', $this->name));
 		if($this->form) return $this->form->FormName() . '_' . $name;
 		else return $name;
 	}
@@ -200,6 +193,7 @@ class FormField extends RequestHandler {
 	
 	function setTitle($val) { 
 		$this->title = $val;
+		return $this;
 	}
 
 	function RightTitle() {
@@ -208,6 +202,7 @@ class FormField extends RequestHandler {
 
 	function setRightTitle($val) { 
 		$this->rightTitle = $val;
+		return $this;
 	}
 
 	function LeftTitle() {
@@ -216,37 +211,33 @@ class FormField extends RequestHandler {
 
 	function setLeftTitle($val) {
 		$this->leftTitle = $val;
+		return $this;
 	}
 
 	/**
 	 * Set tabindex HTML attribute
 	 * (defaults to none).
 	 *
+	 * @deprecated 3.0 Use setAttribute("tabindex") instead
 	 * @param int $index
 	 */
 	public function setTabIndex($index) {
-		$this->tabIndex = $index;
+		Deprecation::notice('3.0', 'Use setAttribute("tabindex") instead');
+		$this->setAttribute($index);
+		return $this;
 	}
 
 	/**
 	 * Get tabindex (if previously set)
+	 * 
+	 * @deprecated 3.0 Use getAttribute("tabindex") instead
 	 * @return int
 	 */
 	public function getTabIndex() {
-		return $this->tabIndex;
+		Deprecation::notice('3.0', 'Use getAttribute("tabindex") instead');
+		return $this->getAttribute('tabindex');
 	}
 
-	/**
-	 * Get tabindex HTML string
-	 *
-	 * @param int $increment Increase current tabindex by this value
-	 * @return string
-	 */
-	protected function getTabIndexHTML($increment = 0) {
-		$tabIndex = (int)$this->getTabIndex() + (int)$increment;
-		return (is_numeric($tabIndex)) ? ' tabindex = "' . $tabIndex . '"' : '';
-	}
-	
 	/**
 	 * Compiles all CSS-classes. Optionally includes a "nolabel"-class
 	 * if no title was set on the formfield.
@@ -281,6 +272,7 @@ class FormField extends RequestHandler {
 	 */
 	function addExtraClass($class) {
 		$this->extraClasses[$class] = $class;
+		return $this;
 	}
 
 	/**
@@ -290,10 +282,17 @@ class FormField extends RequestHandler {
 	 */
 	function removeExtraClass($class) {
 		if(isset($this->extraClasses) && array_key_exists($class, $this->extraClasses)) unset($this->extraClasses[$class]);
+		return $this;
 	}
 
 	/**
 	 * Set an HTML attribute on the field element, mostly an <input> tag.
+	 * 
+	 * Some attributes are best set through more specialized methods, to avoid interfereing with built-in behaviour:
+	 * - 'class': {@link addExtraClass()}
+	 * - 'title': {@link setDescription()}
+	 * - 'value': {@link setValue}
+	 * - 'name': {@link setName}
 	 * 
 	 * CAUTION Doesn't work on most fields which are composed of more than one HTML form field:
 	 * AjaxUniqueTextField, CheckboxSetField, ComplexTableField, CompositeField, ConfirmedPasswordField, CountryDropdownField,
@@ -305,6 +304,7 @@ class FormField extends RequestHandler {
 	 */
 	function setAttribute($name, $value) {
 		$this->attributes[$name] = $value;
+		return $this;
 	}
 
 	/**
@@ -328,8 +328,8 @@ class FormField extends RequestHandler {
 			'value' => $this->Value(),			
 			'class' => $this->extraClass(),
 			'id' => $this->ID(),
-			'tabindex' => $this->getTabIndex(),
 			'disabled' => $this->isDisabled(),
+			'title' => $this->getDescription(),
 		);
 		return array_merge($attrs, $this->attributes);
 	}
@@ -378,6 +378,7 @@ class FormField extends RequestHandler {
 	 */
 	function setValue($value) {
 		$this->value = $value; return $this;
+		return $this;
 	}
 	
 	/**
@@ -385,6 +386,7 @@ class FormField extends RequestHandler {
 	 */
 	function setName($name) {
 		$this->name = $name;
+		return $this;
 	}
 	
 	/**
@@ -394,6 +396,7 @@ class FormField extends RequestHandler {
 	 */
 	function setForm($form) {
 		$this->form = $form; 
+		return $this;
 	}
 	
 	/**
@@ -423,6 +426,7 @@ class FormField extends RequestHandler {
 	 */
 	public function setFieldHolderTemplate($template) {
 		$this->fieldHolderTemplate = $template;
+		return $this;
 	}
 
 	/**
@@ -443,6 +447,7 @@ class FormField extends RequestHandler {
 	function setError($message, $messageType) {
 		$this->message = $message; 
 		$this->messageType = $messageType; 
+		return $this;
 	}
 	
 	/**
@@ -454,6 +459,7 @@ class FormField extends RequestHandler {
 	 */
 	public function setCustomValidationMessage($msg) {
 		$this->customValidationMessage = $msg;
+		return $this;
 	}
 	
 	/**
@@ -477,6 +483,7 @@ class FormField extends RequestHandler {
 	 */
 	function setTemplate($template) {
 		$this->template = $template;
+		return $this;
 	}
 	
 	/**
@@ -569,6 +576,7 @@ class FormField extends RequestHandler {
 	 */
 	function setReadonly($bool) { 
 		$this->readonly = $bool; 
+		return $this;
 	}
 	
 	/**
@@ -585,6 +593,7 @@ class FormField extends RequestHandler {
 	 */
 	function setDisabled($bool) { 
 		$this->disabled = $bool; 
+		return $this;
 	}
 	
 	/**
@@ -632,7 +641,7 @@ class FormField extends RequestHandler {
 	 * @return string
 	 */
 	function Type() {
-		return strtolower(ereg_replace('Field$', '', $this->class));	
+		return strtolower(preg_replace('/Field$/', '', $this->class));	
 	}
 
 	/**
@@ -655,15 +664,6 @@ class FormField extends RequestHandler {
 	}
 	
 	/**
-	 * javascript handler Functions for each field type by default
-	 * formfield doesnt have a validation function
-	 * 
-	 * @todo shouldn't this be an abstract method?
-	 */
-	function jsValidation() {
-	}
-	
-	/**
 	 * Validation Functions for each field type by default
 	 * formfield doesnt have a validation function
 	 * 
@@ -674,15 +674,30 @@ class FormField extends RequestHandler {
 	}
 
 	/**
+	 * @deprecated 3.0 Use setDescription()
+	 */
+	function describe($description) {
+		Deprecation::notice('3.0', 'Use setDescription()');
+		$this->setDescription($description);
+		return $this;
+	}
+
+	/**
 	 * Describe this field, provide help text for it.
-	 * The function returns this so it can be used like this:
-	 * $action = FormAction::create('submit', 'Submit')->describe("Send your changes to be approved")
+	 * By default, renders as a "title" attribute on the form field.
 	 * 
 	 * @return string Description
 	 */
-	function describe($description) {
+	function setDescription($description) {
 		$this->description = $description;
-		return $this;
+		return $this;	
+	}
+
+	/**
+	 * @return String
+	 */
+	function getDescription() {
+		return $this->description;
 	}
 	
 	function debug() {
@@ -738,6 +753,7 @@ class FormField extends RequestHandler {
 	 */ 
 	function setContainerFieldSet($containerFieldSet) {
 		$this->containerFieldSet = $containerFieldSet;
+		return $this;
 	}
 	
 	function rootFieldSet() {

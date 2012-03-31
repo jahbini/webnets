@@ -1,7 +1,7 @@
-<div class="cms-menu cms-panel cms-panel-layout west" id="cms-menu" data-layout="{type: 'border'}">
-	<div class="cms-panel-header cms-logo-header north">
+<div class="cms-menu cms-panel cms-panel-layout west" id="cms-menu" data-layout-type="border">
+	<div class="cms-logo-header north">
 		<div class="cms-logo">
-			<a href="http://www.silverstripe.org/" target="_blank">
+			<a href="http://www.silverstripe.org/" target="_blank" title="SilverStripe (Version - $CMSVersion)">
 				SilverStripe <% if CMSVersion %><abbr class="version">$CMSVersion</abbr><% end_if %>
 			</a>
 			<span>$SiteConfig.Title</span>
@@ -12,7 +12,7 @@
 			<% control CurrentMember %>
 				<span>
 					<% _t('Hello','Hi') %>
-					<a href="{$AbsoluteBaseURL}admin/myprofile" class="profile-link">
+					<a href="{$AbsoluteBaseURL}admin/myprofile" class="profile-link ss-ui-dialog-link">
 						<% if FirstName && Surname %>$FirstName $Surname<% else_if FirstName %>$FirstName<% else %>$Email<% end_if %>
 					</a>
 				</span>
@@ -24,7 +24,7 @@
 		<ul class="cms-menu-list">
 		<% control MainMenu %>
 			<li class="$LinkingMode $FirstLast <% if LinkingMode == 'link' %><% else %>opened<% end_if %>" id="Menu-$Code">
-				<a href="$Link">
+				<a href="$Link" <% if Code == 'Help' %>target="_blank"<% end_if%>>
 					<span class="icon icon-16 icon-{$Code.LowerCase}">&nbsp;</span>
 					<span class="text">$Title</span>
 				</a>

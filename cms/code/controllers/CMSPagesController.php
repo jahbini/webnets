@@ -9,6 +9,7 @@ class CMSPagesController extends CMSMain {
 	static $url_rule = '/$Action/$ID/$OtherID';
 	static $url_priority = 41;
 	static $menu_title = 'Pages';	
+	static $required_permission_codes = 'CMS_ACCESS_CMSMain';
 	
 	function init() {
 		parent::init();
@@ -37,5 +38,12 @@ class CMSPagesController extends CMSMain {
 	function PreviewLink() {
 		return false;
 	}
-	
+
+	function AddLink() {
+		return singleton("CMSPageAddController")->Link();
+	}
+
+	public function currentPageID() {
+		return false;
+	}
 }

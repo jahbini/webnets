@@ -1,9 +1,9 @@
+jQuery.noConflict();
+
 /**
  * File: LeftAndMain.js
  */
 (function($) {
-	$.metadata.setType('html5');
-	
 	// setup jquery.entwine
 	$.entwine.warningLevel = $.entwine.WARN_LEVEL_BESTPRACTISE;
 	$.entwine('ss', function($) {
@@ -16,7 +16,7 @@
 			var top = ($(window).height() - spinner.height()) / 2;
 			spinner.css('top', top + offset);
 			spinner.show();
-		}
+		};
 		
 		$(window).bind('resize', positionLoadingSpinner).trigger('resize');
 
@@ -77,7 +77,7 @@
 						if(url) window.history.replaceState({}, '', url);
 					}
 					
-					self.redraw()
+					self.redraw();
 				});
 				
 				// Remove loading screen
@@ -95,8 +95,12 @@
 			redraw: function() {
 				// Move from inner to outer layouts. Some of the elements might not exist.
 				// Not all edit forms are layouted, so qualify by their data value.
-				this.find('.cms-edit-form[data-layout]').redraw(); 
+				this.find('.cms-content-fields[data-layout-type]').redraw(); 
+				this.find('.cms-edit-form[data-layout-type]').redraw(); 
+				
+				// Only redraw preview if its visible
 				this.find('.cms-preview').redraw();
+
 				// Only redraw the content area if its not the same as the edit form
 				var contentEl = this.find('.cms-content');
 				if(!contentEl.is('.cms-edit-form')) contentEl.redraw();
@@ -119,9 +123,8 @@
 			 *  - {Object} data Any additional data passed through to History.pushState()
 			 */
 			loadPanel: function(url, title, data) {
-				var data = data || {};
-				var selector = data.selector || '.cms-content'
-				var contentEl = $(selector);
+				if(!data) data = {};
+				var selector = data.selector || '.cms-content', contentEl = $(selector);
 				
 				// Check change tracking (can't use events as we need a way to cancel the current state change)
 				var trackedEls = contentEl.find(':data(changetracker)').add(contentEl.filter(':data(changetracker)'));
@@ -141,7 +144,7 @@
 					// which matches one class on the menu
 					window.History.pushState(data, title, url);
 				} else {
-					window.location = url;
+					window.location = $.path.makeUrlAbsolute(url, $('base').attr('href'));
 				}
 			},
 			
@@ -213,7 +216,7 @@
 						newContentEl
 							.removeClass(layoutClasses.join(' '))
 							.addClass(origLayoutClasses.join(' '));
-						if(origStyle) newContentEl.attr('style', origStyle)
+						if(origStyle) newContentEl.attr('style', origStyle);
 						newContentEl.css('visibility', 'hidden');
 
 						// Allow injection of inline styles, as they're not allowed in the document body.
@@ -239,10 +242,17 @@
 					},
 					error: function(xhr, status, e) {
 						contentEl.removeClass('loading');
+						errorMessage(e);
 					}
 				});
 				
 				this.setCurrentXHR(xhr);
+			}
+		});
+
+		$('.cms-content-fields').entwine({
+			redraw: function() {
+				this.layout();
 			}
 		});
 
@@ -253,191 +263,127 @@
 		 */
 		$('.cms input[type="submit"], .cms button, .cms input[type="reset"]').entwine({
 			onmatch: function() {
-				this.addClass('ss-ui-button');
-				this.redraw();
+				if(!this.hasClass('ss-ui-button')) this.addClass('ss-ui-button');
 				
 				this._super();
 			}
 		});
 
-		/**
-		 * Class: a#profile-link
-		 * 
-		 * Link for editing the profile for a logged-in member through a modal dialog.
-		 */
-		$('.cms-container .profile-link').entwine({
-			DialogPadding: 40,
-			MaxHeight: 800,
-			MaxWidth: 800,
-			MinHeight: 120,
-			MinWidth: 120,
-			
-			/**
-			 * Constructor: onmatch
-			 */
+		$('.cms .ss-ui-button').entwine({
 			onmatch: function() {
-				this.bind('click', function(e) {
-					return self._openPopup();
-				});
-				
-				var self = this;
+				if(!this.data('button')) this.button();
 
-				$('body').append(
-					'<div id="ss-ui-dialog">'
-					+ '<iframe id="ss-ui-dialog-iframe" '
-					+ 'marginWidth="0" marginHeight="0" frameBorder="0" scrolling="auto">'
-					+ '</iframe>'
-					+ '</div>'
-				);
-
-				$('#ss-ui-dialog-iframe').bind('load', function(e) {
-					self._resize();
-				});
-				
-				$(window).bind('resize', function() {
-					self._resize();
-				});
-				
-				self.redraw();
-			},
-			
-			/**
-			 * Function: redraw
-			 *
-			 * Returns: void
-			 */
-			redraw: function() {
-				var self = this;
-				var useCookie = false;
-				var cookieVal = false;
-				
-				if(useCookie && jQuery.cookie && jQuery.cookie('ss-ui-dialog')) {
-					cookieVal = JSON.parse(jQuery.cookie('ss-ui-dialog'));
-				}
-
-				$("#ss-ui-dialog").dialog(jQuery.extend({
-					autoOpen: false,
-					bgiframe: true,
-					modal: true,
-					width: self._width(),
-					height: self._height(),
-					position: 'center',
-					
-					resizeStop: function(e, ui) {
-						self._resize();
-					},
-					
-					dragStop: function(e, ui) {
-						self._saveState();
-					},
-					// TODO i18n
-					title: 'Edit Profile'
-				}, cookieVal)).css('overflow', 'hidden');
-				
-			},
-			
-			/**
-			 * Function: _popupHeight
-			 * 
-			 * Returns a value > minHeight < max height
-			 * Returns: Int
-			 */
-			_height: function() {
-				var marginTop = parseInt($(this).css('margin-top').replace('px', ''));
-				var marginBottom = parseInt($(this).css('margin-bottom').replace('px', ''));
-				var body = $("body").height();
-
-				var height = body - (marginTop + marginBottom) - (this.getDialogPadding() * 2);
-				
-				if(height > this.getMaxHeight()) 
-					return this.getMaxHeight();
-				else if(height < this.getMinHeight())
-					return this.getMinHeight();
-				
-				return height;
-			},
-			
-			/**
-			 * Function: _popupWidth
-			 *
-			 * Returns: Int
-			 */
-			_width: function() {
-				var body = $("body").width();
-				var width = body - (this.getDialogPadding() * 2);	
-				
-				if(width > this.getMaxWidth()) 
-					return this.getMaxWidth();
-				else if(width < this.getMinWidth())
-					return this.getMinWidth();
-					
-				return width;
-			},
-
-			/**
-			 * Function: _openPopup
-			 */
-			_openPopup: function(e) {
-				$('#ss-ui-dialog-iframe').attr('src', this.attr('href'));
-
-				$("#ss-ui-dialog").dialog('open');
-
-				return false;
-			},
-
-			/**
-			 * Function: _resize
-			 */
-			_resize: function() {
-				var iframe = $('#ss-ui-dialog-iframe');
-				var container = $('#ss-ui-dialog');
-				
-				container.dialog("option", "width", this._width());
-				container.dialog("option", "height", this._height());
-				container.dialog('option', 'position', 'center');
-				
-				iframe.attr('width', 
-					container.innerWidth() 
-					- parseFloat(container.css('paddingLeft'))
-					- parseFloat(container.css('paddingRight'))
-				);
-				iframe.attr('height', 
-					container.innerHeight()
-					- parseFloat(container.css('paddingTop')) 
-					- parseFloat(container.css('paddingBottom'))
-				);
-				
-				this._saveState();
-			},
-
-			/**
-			 * Function: _saveState
-			 */
-			_saveState: function() {
-				var container = $('#ss-ui-dialog');
-
-				// save size in cookie (optional)
-				if(jQuery.cookie && container.width() && container.height()) {
-					jQuery.cookie(
-						'ss-ui-dialog',
-						JSON.stringify({
-							width: parseInt(container.width(), 10), 
-							height: parseInt(container.height(), 10)
-						}),
-						{ expires: 30, path: '/'}
-					);
-				}
+				this._super();
 			}
 		});
+
+		/**
+		 * Loads the link's 'href' attribute into a panel via ajax,
+		 * as opposed to triggering a full page reload.
+		 * Little helper to avoid repetition, and make it easy to
+		 * "opt in" to panel loading, while by default links still exhibit their default behaviour.
+		 * Same goes for breadcrumbs in the CMS.
+		 */
+		$('.cms .cms-panel-link, .cms a.crumb').entwine({
+			onclick: function(e) {
+				var href = this.attr('href'), url = href ? href : this.data('href'),
+					data = (this.data('targetPanel')) ? {selector: this.data('targetPanel')} : null;
+				
+				$('.cms-container').loadPanel(url, null, data);
+				e.preventDefault();
+			}
+		});
+
+		/**
+		 * Does an ajax loads of the link's 'href' attribute via ajax and displays any FormResponse messages from the CMS.
+		 * Little helper to avoid repetition, and make it easy to trigger actions via a link,
+		 * without reloading the page, changing the URL, or loading in any new panel content.
+		 */
+		$('.cms .cms-link-ajax').entwine({
+			onclick: function(e) {
+				var href = this.attr('href'), url = href ? href : this.data('href');
+
+				jQuery.ajax({
+					url: url,
+					// Ensure that form view is loaded (rather than whole "Content" template)
+					complete: function(xmlhttp, status) {
+						var msg = (xmlhttp.getResponseHeader('X-Status')) ? xmlhttp.getResponseHeader('X-Status') : xmlhttp.responseText;
+						if (typeof msg != "undefined" && msg != null) eval(msg);
+					},
+					dataType: 'html'
+				});
+				e.preventDefault();
+			}
+		});
+
+		/**
+		 * Trigger dialogs with iframe based on the links href attribute (see ssui-core.js).
+		 */
+		$('.cms .ss-ui-dialog-link').entwine({
+			UUID: null,
+			onmatch: function() {
+				this._super();
+				this.setUUID(new Date().getTime());
+			},
+			onclick: function() {
+				this._super();
+
+				var self = this, id = 'ss-ui-dialog-' + this.getUUID();
+
+				var dialog = $('#' + id);
+				if(!dialog.length) {
+					dialog = $('<div class="ss-ui-dialog" id="' + id + '" />');
+					$('body').append(dialog);
+				}
+			
+				dialog.ssdialog({iframeUrl: this.attr('href'), autoOpen: true});
+				return false;
+			}
+		});
+
+		/**
+		 * Add styling to all contained buttons, and create buttonsets if required.
+		 */
+		$('.cms .Actions').entwine({
+		onmatch: function() {
+			this.find('.ss-ui-button').click(function() {
+					var form = this.form;
+					// forms don't natively store the button they've been triggered with
+					if(form) {
+						form.clickedButton = this;
+						// Reset the clicked button shortly after the onsubmit handlers
+						// have fired on the form
+						setTimeout(function() {form.clickedButton = null;}, 10);
+					}
+				});
+
+			this.redraw();
+			this._super();
+		},
+		redraw: function() {
+			// Remove whitespace to avoid gaps with inline elements
+			this.contents().filter(function() { 
+				return (this.nodeType == 3 && !/\S/.test(this.nodeValue)); 
+			}).remove();
+
+			// Init buttons if required
+			this.find('.ss-ui-button').each(function() {
+				if(!$(this).data('button')) $(this).button();
+			});
+			
+			// Mark up buttonsets
+			this.find('.ss-ui-buttonset').buttonset();
+		}
+	});
 		
 		/**
 		 * Duplicates functionality in DateField.js, but due to using entwine we can match
 		 * the DOM element on creation, rather than onclick - which allows us to decorate
 		 * the field with a calendar icon
 		 */
-		$('.cms-container .field.date input.text').entwine({
+		$('.cms .field.date input.text').entwine({
 			onmatch: function() {
-				var holder = $(this).parents('.field.date:first'), config = holder.metadata({type: 'class'});
+				var holder = $(this).parents('.field.date:first'), config = holder.data();
 				if(!config.showcalendar) return;
 
 				config.showOn = 'button';
@@ -462,10 +408,15 @@
 		 * we can fix the height cropping.
 		 */
 		
-		$('.cms-container .field.dropdown').entwine({
+		$('.cms .field.dropdown select, .cms .field select[multiple]').entwine({
 			onmatch: function() {
-				$(this).find("select:not(.no-chzn)").chosen();
-				$(this).addClass("has-chzn");
+				if(this.is('.no-chzn')) return;
+
+				// Explicitly disable default placeholder if no custom one is defined
+				if(!this.data('placeholder')) this.data('placeholder', ' ');
+
+				// Apply chosen
+				this.chosen().addClass("has-chzn");
 				
 				this._super();
 			}
@@ -478,27 +429,76 @@
 				});
 			}
 		});
-	});	 
+	});
+	
+	/**
+	 * Overload the default GridField behaviour (open a new URL in the browser)
+	 * with the CMS-specific ajax loading.
+	 */
+	$('.cms .ss-gridfield').entwine({
+		showDetailView: function(url) {
+			// Include any GET parameters from the current URL, as the view state might depend on it.
+			// For example, a list prefiltered through external search criteria might be passed to GridField.
+			if(window.location.search) url += window.location.search;
+			$('.cms-container').entwine('ss').loadPanel(url);
+		}
+	});
+
+
+	/**
+	 * Generic search form in the CMS, often hooked up to a GridField results display.
+	 */	
+	$('.cms-search-form').entwine({
+
+		onsubmit: function() {
+			// Remove empty elements and make the URL prettier
+			var nonEmptyInputs = this.find(':input:not(:submit)').filter(function() {
+				// Use fieldValue() from jQuery.form plugin rather than jQuery.val(),
+				// as it handles checkbox values more consistently
+				var vals = $.grep($(this).fieldValue(), function(val) { return (val);});
+				return (vals.length);
+			});
+			var url = this.attr('action');
+			if(nonEmptyInputs.length) url += '?' + nonEmptyInputs.serialize();
+
+			var container = this.closest('.cms-container');
+			container.find('.cms-edit-form').tabs('select',0);  //always switch to the first tab (list view) when searching
+			container .entwine('ss').loadPanel(url);
+			return false;
+		},
+
+		/**
+		 * Resets are processed on the serverside, so need to trigger a submit.
+		 */
+		onreset: function(e) {
+			this.clearForm();
+			this.submit();
+		}
+
+	});
+
+	/**
+	 * Simple toggle link, which points to a DOm element by its ID selector
+	 * in the href attribute (which doubles as an anchor link to that element).
+	 */
+	$('.cms .cms-help-toggle').entwine({
+		onmatch: function() {
+			this._super();
+
+			$(this.attr('href')).hide();
+		},
+		onclick: function(e) {
+			$(this.attr('href')).toggle();
+			e.preventDefault();
+		}
+	});
+	
 }(jQuery));
 
-// Backwards compatibility
 var statusMessage = function(text, type) {
 	jQuery.noticeAdd({text: text, type: type});
 };
 
 var errorMessage = function(text) {
 	jQuery.noticeAdd({text: text, type: 'error'});
-};
-
-returnFalse = function() {
-	return false;
-};
-
-/**
- * Find and enable TinyMCE on all htmleditor fields
- * Pulled in from old tinymce.template.js
- */
-
-function nullConverter(url) {
-	return url;
 };

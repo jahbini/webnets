@@ -209,9 +209,8 @@ class ErrorPage extends Page {
 				),
 				$errorFile
 			);
-			FormResponse::status_message($fileErrorText, 'bad');
-			FormResponse::respond();
-			return;
+			$this->response->addHeader('X-Status', $fileErrorText);
+			return $this->httpError(405);
 		}
 	}
 	
@@ -281,4 +280,4 @@ class ErrorPage_Controller extends Page_Controller {
 }
 
 
-?>
+

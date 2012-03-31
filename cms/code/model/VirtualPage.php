@@ -96,6 +96,21 @@ class VirtualPage extends Page {
 	function ContentSource() {
 		return $this->CopyContentFrom();
 	}
+
+	/**
+	 * For VirtualPage, add a canonical link tag linking to the original page
+	 * See TRAC #6828 & http://support.google.com/webmasters/bin/answer.py?hl=en&answer=139394
+	 *
+	 * @param boolean $includeTitle Show default <title>-tag, set to false for custom templating
+	 * @return string The XHTML metatags
+	 */
+	public function MetaTags($includeTitle = true) {
+		$tags = parent::MetaTags($includeTitle);
+		if ($this->CopyContentFrom()->ID) {
+			$tags .= "<link rel=\"canonical\" href=\"{$this->CopyContentFrom()->Link()}\" />\n";
+		}
+		return $tags;
+	}
 	
 	function allowedChildren() {
 		if($this->CopyContentFrom()) {
@@ -196,29 +211,30 @@ class VirtualPage extends Page {
 	 * We have to change it to copy all the content from the original page first.
 	 */
 	function onBeforeWrite() {
-		// On regular write, this will copy from published source.  This happens on every publish
-		if($this->extension_instances['Versioned']->migratingVersion
-			&& Versioned::current_stage() == 'Live') {
-			if($this->CopyContentFromID) {
-				$performCopyFrom = true;
-			
+		$performCopyFrom = null;
+
+		// Determine if we need to copy values.
+		if(
+			$this->extension_instances['Versioned']->migratingVersion
+			&& Versioned::current_stage() == 'Live'
+			&& $this->CopyContentFromID
+		) {
+			// On publication to live, copy from published source.
+			$performCopyFrom = true;
+		
 			$stageSourceVersion = DB::query("SELECT \"Version\" FROM \"SiteTree\" WHERE \"ID\" = $this->CopyContentFromID")->value();
 			$liveSourceVersion = DB::query("SELECT \"Version\" FROM \"SiteTree_Live\" WHERE \"ID\" = $this->CopyContentFromID")->value();
-			
-				// We're going to create a new VP record in SiteTree_versions because the published
-				// version might not exist, unless we're publishing the latest version
-				if($stageSourceVersion != $liveSourceVersion) {
-					$this->extension_instances['Versioned']->migratingVersion = null;
-				}
+		
+			// We're going to create a new VP record in SiteTree_versions because the published
+			// version might not exist, unless we're publishing the latest version
+			if($stageSourceVersion != $liveSourceVersion) {
+				$this->extension_instances['Versioned']->migratingVersion = null;
 			}
-
-		// On regular write, this will copy from draft source.  This is only executed when the source
-		// page changeds
 		} else {
+			// On regular write, copy from draft source. This is only executed when the source page changes.
 			$performCopyFrom = $this->isChanged('CopyContentFromID', 2) && $this->CopyContentFromID != 0;
 		}
 		
-		// On publish, this will copy from published source
  		if($performCopyFrom && $this instanceof VirtualPage) {
 			// This flush is needed because the get_one cache doesn't respect site version :-(
 			singleton('SiteTree')->flushCache();
@@ -243,6 +259,61 @@ class VirtualPage extends Page {
 				$this->updateImageTracking();
 			}
 		}
+
+		// Check if page type has changed to a non-virtual page.
+		// Caution: Relies on the fact that the current instance is still of the old page type.
+		if($this->isChanged('ClassName', 2)) {
+			$changed = $this->getChangedFields();
+			$classBefore = $changed['ClassName']['before'];
+			$classAfter = $changed['ClassName']['after'];
+			if($classBefore != $classAfter) {
+				// Remove all database rows for the old page type to avoid inconsistent data retrieval.
+				// TODO This should apply to all page type changes, not only on VirtualPage - but needs
+				// more comprehensive testing as its a destructive operation
+				$removedTables = array_diff(ClassInfo::dataClassesFor($classBefore), ClassInfo::dataClassesFor($classAfter));
+				if($removedTables) foreach($removedTables as $removedTable) {
+					// Note: *_versions records are left intact
+					foreach(array('', 'Live') as $stage) {
+						if($stage) $removedTable = "{$removedTable}_{$stage}";
+						DB::query(sprintf('DELETE FROM "%s" WHERE "ID" = %d', $removedTable, $this->ID));					
+					}
+				}	
+
+				// Also publish the change immediately to avoid inconsistent behaviour between
+				// a non-virtual draft and a virtual live record (e.g. republishing the original record
+				// shouldn't republish the - now unrelated - changes on the ex-VirtualPage draft).
+				// Copies all stage fields to live as well.
+				$source = DataObject::get_one("SiteTree",sprintf('"SiteTree"."ID" = %d', $this->CopyContentFromID));
+				$this->copyFrom($source);
+				$this->publish('Stage', 'Live');
+
+				// Change reference on instance (as well as removing the underlying database tables)
+				$this->CopyContentFromID = 0;
+			}
+		}
+	}
+
+	function validate() {
+		$result = parent::validate();
+
+		// "Can be root" validation
+		$orig = $this->CopyContentFrom();
+		if(!$orig->stat('can_be_root') && !$this->ParentID) {
+			$result->error(
+				sprintf(
+					_t(
+						'VirtualPage.PageTypNotAllowedOnRoot', 
+						'Original page type "%s" is not allowed on the root level for this virtual page', 
+						PR_MEDIUM,
+						'First argument is a class name'
+					),
+					$orig->i18n_singular_name()
+				),
+				'CAN_BE_ROOT_VIRTUAL'
+			);
+		}
+
+		return $result;
 	}
 	
 	/**
@@ -275,6 +346,10 @@ class VirtualPage extends Page {
 		
 		// Update ImageTracking
 		$this->ImageTracking()->setByIdList($this->CopyContentFrom()->ImageTracking()->column('ID'));
+	}
+
+	function CMSTreeClasses($controller) {
+		return parent::CMSTreeClasses($controller) . ' VirtualPage-' . $this->CopyContentFrom()->ClassName;
 	}
 	
 	/**
@@ -423,4 +498,4 @@ class VirtualPage_Controller extends Page_Controller {
 	}
 }
 
-?>
+

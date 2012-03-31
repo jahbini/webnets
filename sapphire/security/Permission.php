@@ -4,7 +4,7 @@
  * @package sapphire
  * @subpackage security
  */
-class Permission extends DataObject {
+class Permission extends DataObject implements TemplateGlobalProvider {
 
   // the (1) after Type specifies the DB default value which is needed for
 	// upgrades from older SilverStripe versions
@@ -621,6 +621,12 @@ class Permission extends DataObject {
 		// Just in case we've altered someone's permissions
 		Permission::flush_permission_cache();
 	}
+
+	public static function get_template_global_variables() {
+		return array(
+			'HasPerm' => 'check'
+		);
+	}
 }
 
 
@@ -689,4 +695,4 @@ class Permission_Group {
 	}
 }
 
-?>
+

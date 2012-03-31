@@ -1,36 +1,32 @@
-<div class="cms-content center ss-tabset $BaseCSSClasses" data-layout="{type: 'border'}">
+<div class="cms-content center ss-tabset $BaseCSSClasses" data-layout-type="border">
 
 	<div class="cms-content-header north">
 		<div>
-			<h2><% _t('CMSPagesController.Title','Edit & Organize') %></h2>
+			<h2>
+				<% include CMSBreadcrumbs %>
+			</h2>
 		
 			<div class="cms-content-header-tabs">
 				<ul>
 					<li>
-						<a href="#cms-content-treeview"><% _t('CMSPagesController.TreeView', 'Tree View') %></a>
+						<a href="#cms-content-treeview" class="content-treeview"><% _t('CMSPagesController.TreeView', 'Tree View') %></a>
+					</li>
+					<!--
+					<li>
+						<a href="#cms-content-galleryview" class="content-galleryview"><% _t('CMSPagesController.GalleryView', 'Gallery View') %></a>
 					</li>
 					<li>
-						<a href="#cms-content-galleryview"><% _t('CMSPagesController.GalleryView', 'Gallery View') %></a>
+						<a href="#cms-content-listview" class="content-listview"><% _t('CMSPagesController.ListView', 'List View') %></a>
 					</li>
-					<li>
-						<a href="#cms-content-listview"><% _t('CMSPagesController.ListView', 'List View') %></a>
-					</li>
+					-->
 				</ul>
 			</div>
 		</div>
 	</div>
 
-	<div class="cms-content-tools west cms-panel cms-panel-layout" id="cms-content-tools" data-expandOnClick="true" data-layout="{type: 'border'}">
-		<div class="cms-panel-content center">
-			<h3 class="cms-panel-header"><% _t('FILTER', 'Filter') %></h3>
-			$SearchForm
-		</div>
-		<div class="cms-panel-content-collapsed">
-			<h3 class="cms-panel-header"><% _t('FILTER', 'Filter') %></h3>
-		</div>
-	</div>
+	$Tools
 
-	<div class="cms-content-fields center ui-widget-content">
+	<div class="cms-content-fields center ui-widget-content cms-panel-padded">
 		
 		<div id="cms-content-treeview">
 			
@@ -47,7 +43,8 @@
 			</div>
 
 		</div>
-		
+
+		<!--		
 		<div id="cms-content-listview">
 			<i>Not implemented yet</i>
 		</div>
@@ -55,6 +52,7 @@
 		<div id="cms-content-galleryview">
 			<i>Not implemented yet</i>
 		</div>
+		-->
 		
 	</div>
 	

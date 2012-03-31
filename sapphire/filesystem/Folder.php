@@ -261,13 +261,13 @@ class Folder extends File {
 			$oldFile = $file;
 			
 			if(strpos($file, '.') !== false) {
-				$file = ereg_replace('[0-9]*(\.[^.]+$)', $i . '\\1', $file);
+				$file = preg_replace('/[0-9]*(\.[^.]+$)/', $i . '\\1', $file);
 			} elseif(strpos($file, '_') !== false) {
-				$file = ereg_replace('_([^_]+$)', '_' . $i, $file);
+				$file = preg_replace('/_([^_]+$)/', '_' . $i, $file);
 			} else {
-				$file .= "_$i";
+				$file .= '_'.$i;
 			}
-			
+
 			if($oldFile == $file && $i > 2) user_error("Couldn't fix $file$ext with $i", E_USER_ERROR);
 		}
 		
@@ -330,6 +330,15 @@ class Folder extends File {
 	function setFilename($filename) {
 		$this->setField('Title',pathinfo($filename, PATHINFO_BASENAME));
 		parent::setFilename($filename);
+	}
+
+	/**
+	 * A folder doesn't have a (meaningful) file size.
+	 * 
+	 * @return Null
+	 */
+	function getSize() {
+		return null;
 	}
 	
 	/**
@@ -398,41 +407,17 @@ class Folder extends File {
 	 * and implemeting updateCMSFields(FieldList $fields) on that extension.
 	 */
 	function getCMSFields() {
-		$config = GridFieldConfig::create();
-		$config->addComponent(new GridFieldFilter());
-		$config->addComponent(new GridFieldDefaultColumns());
-		$config->addComponent(new GridFieldSortableHeader());
-		$config->addComponent(new GridFieldPaginator(10));
-		$config->addComponent(new GridFieldAction_Delete());
-		$config->addComponent(new GridFieldAction_Edit());
-		$config->addComponent($gridFieldForm = new GridFieldPopupForms());
-		$gridFieldForm->setTemplate('CMSGridFieldPopupForms');
-		$files = DataList::create('File')->filter('ParentID', $this->ID)->exclude('ClassName', 'Folder');
-		$gridField = new GridField('File','Files', $files, $config);
-		$gridField->setDisplayFields(array(
-			'StripThumbnail' => '',
-			'Parent.FileName' => 'Folder',
-			'Title'=>'Title',
-			'Size'=>'Size',
-		));
-
-		$titleField = ($this->ID && $this->ID != "root") ? new TextField("Title", _t('Folder.TITLE')) : new HiddenField("Title");
+		// Hide field on root level, which can't be renamed
+		if(!$this->ID || $this->ID === "root") {
+			$titleField = new HiddenField("Name");	
+		} else {
+			$titleField = new TextField("Name", $this->fieldLabel('Name'));
+		}
 		
 		$fields = new FieldList(
-			new TabSet('Root',
-				new Tab('Main',
-					$titleField,
-					$gridField,
-					new HiddenField("ID"),
-					new HiddenField("DestFolderID")
-				)
-			)
+			$titleField,
+			new HiddenField('ParentID')
 		);
-		
-		if(!$this->canEdit()) {
-			$fields->removeByName("Upload");
-		}
-
 		$this->extend('updateCMSFields', $fields);
 		
 		return $fields;

@@ -10,16 +10,6 @@
  * A TableField-instance should never be saved twice without reloading, because otherwise it 
  * can't determine if a field is new (=create) or existing (=update), and will produce duplicates.
  * 
- * @param $name string The fieldname
- * @param $sourceClass string The source class of this field
- * @param $fieldList array An array of field headings of Fieldname => Heading Text (eg. heading1)
- * @param $fieldTypes array An array of field types of fieldname => fieldType (eg. formfield). Do not use for extra data/hiddenfields.
- * @param $filterField string The field to filter by.  Give the filter value in $sourceFilter.  The value will automatically be set on new records.
- * @param $sourceFilter string If $filterField has a value, then this is the value to filter by.  Otherwise, it is a SQL filter expression.
- * @param $editExisting boolean (Note: Has to stay on this position for legacy reasons)
- * @param $sourceSort string
- * @param $sourceJoin string
- * 
  * @todo We should refactor this to support a single FieldList instead of evaluated Strings for building FormFields
  * 
  * @package forms
@@ -92,10 +82,15 @@ class TableField extends TableListField {
 	public $showAddRow = true;
 	
 	/**
-	 * Automatically detect a has-one relationship
-	 * in the popup (=child-class) and save the relation ID.
-	 *
-	 * @var boolean
+	 * @param $name string The fieldname
+	 * @param $sourceClass string The source class of this field
+	 * @param $fieldList array An array of field headings of Fieldname => Heading Text (eg. heading1)
+	 * @param $fieldTypes array An array of field types of fieldname => fieldType (eg. formfield). Do not use for extra data/hiddenfields.
+	 * @param $filterField string The field to filter by.  Give the filter value in $sourceFilter.  The value will automatically be set on new records.
+	 * @param $sourceFilter string If $filterField has a value, then this is the value to filter by.  Otherwise, it is a SQL filter expression.
+	 * @param $editExisting boolean (Note: Has to stay on this position for legacy reasons)
+	 * @param $sourceSort string
+	 * @param $sourceJoin string
 	 */
 	function __construct($name, $sourceClass, $fieldList = null, $fieldTypes, $filterField = null, 
 						$sourceFilter = null, $editExisting = true, $sourceSort = null, $sourceJoin = null) {
@@ -267,7 +262,7 @@ class TableField extends TableListField {
 			$this->value = null;
 			$items = $this->sourceItems();
 			
-			FormResponse::update_dom_id($this->id(), $this->FieldHolder());
+			// FormResponse::update_dom_id($this->id(), $this->FieldHolder());
 		}
 	}
 	
@@ -454,6 +449,7 @@ class TableField extends TableListField {
 	 */
 	function setExtraData($extraData) {
 		$this->extraData = $extraData;
+		return $this;
 	}
 	
 	/**
@@ -468,8 +464,8 @@ class TableField extends TableListField {
 	 */
 	function FieldHolder() {
 		Requirements::javascript(SAPPHIRE_DIR . '/thirdparty/jquery/jquery.js');
+		Requirements::javascript(THIRDPARTY_DIR . "/prototype/prototype.js");
 		Requirements::javascript(SAPPHIRE_DIR . '/thirdparty/behaviour/behaviour.js');
-		Requirements::javascript(SAPPHIRE_DIR . '/javascript/prototype_improvements.js');
 		Requirements::add_i18n_javascript(SAPPHIRE_DIR . '/javascript/lang');
 		Requirements::javascript(SAPPHIRE_DIR . '/javascript/TableListField.js');
 		Requirements::javascript(SAPPHIRE_DIR . '/javascript/TableField.js');
@@ -480,41 +476,7 @@ class TableField extends TableListField {
 		
 	function setTransformationConditions($conditions) {
 		$this->transformationConditions = $conditions;
-	}
-	
-	function jsValidation() {
-		$js = "";
-
-		$items = $this->Items();
-		if($items) foreach($items as $item) {
-			foreach($item->Fields() as $field) {
-				//if the field type has some special specific specification for validation of itself
-				$js .= $field->jsValidation($this->form->class."_".$this->form->Name());
-			}
-		}
-		
-		// TODO Implement custom requiredFields
-		$items = $this->sourceItems(); 
-		if($items && $this->requiredFields && $items->count()) {
-			foreach ($this->requiredFields as $field) {
-				foreach($items as $item){
-					$cellName = $this->getName().'['.$item->ID.']['.$field.']';
-					$js .= "\n";
-					if($fields->dataFieldByName($cellName)) {
-						$js .= <<<JS
-if(typeof fromAnOnBlur != 'undefined'){
-	if(fromAnOnBlur.name == '$cellName')
-		require(fromAnOnBlur);
-}else{
-	require('$cellName');
-}
-JS;
-					}
-				}
-			}
-		}
-
-		return $js;
+		return $this;
 	}
 	
 	function php($data) {
@@ -580,6 +542,7 @@ JS;
 	
 	function setRequiredFields($fields) {
 		$this->requiredFields = $fields;
+		return $this;
 	}
 }
 
@@ -753,4 +716,3 @@ class TableField_Item extends TableListField_Item {
 	
 }
 
-?>

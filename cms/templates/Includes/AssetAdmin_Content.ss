@@ -1,49 +1,41 @@
-<div class="cms-content center ss-tabset $BaseCSSClasses" data-layout="{type: 'border'}">
+<div class="cms-content center ss-tabset $BaseCSSClasses" data-layout-type="border">
 
 	<div class="cms-content-header north">
 		<div>
-			<h2><% _t('AssetAdmin.Title', 'Find &amp; Organize') %></h2>
-			<div class="cms-content-header-tabs">
-				<ul>
-					<li>
-						<a href="#cms-content-listview"><% _t('AssetAdmin.ListView', 'List View') %></a>
-					</li>
-					<li>
-						<a href="#cms-content-galleryview"><% _t('AssetAdmin.GalleryView', 'Gallery View') %></a>
-					</li>
-					<li>
-						<a href="#cms-content-treeview"><% _t('AssetAdmin.TreeView', 'Tree View') %></a>
-					</li>
-				</ul>
-			</div>
-		</div>
-	</div>
+			<% control EditForm %>
+				<% if Backlink %>
+					<a class="backlink ss-ui-button cms-panel-link" data-icon="back" href="$Backlink">
+						<% _t('Back', 'Back') %>
+					</a>
+				<% end_if %>
 
-
-	<div class="cms-content-tools cms-panel west cms-panel-layout" data-expandOnClick="true" data-layout="{type: 'border'}">
-		<div class="cms-panel-content center">
-			<h3 class="cms-panel-header north"></h3>
-			
-			<div class="cms-content-tools-actions ui-widget-content">
-				$AddForm
-			</div>
-			<div class="cms-tree" data-url-tree="$Link(getsubtree)" data-url-savetreenode="$Link(savetreenode)">
-				$SiteTreeAsUL
-			</div>
-		</div>
+				<h2 id="page-title-heading">
+				<% control Controller %>
+					<% include CMSBreadcrumbs %>
+				<% end_control %>
+				</h2>
+				<% if Fields.hasTabset %>
+					<% with Fields.fieldByName('Root') %>
+					<div class="cms-content-header-tabs">
+						<ul>
+						<% control Tabs %>
+							<li><a href="#$id"<% if extraClass %> class="$extraClass"<% end_if %>>$Title</a></li>
+						<% end_control %>
+						</ul>
+					</div>
+					<% end_with %>
+				<% end_if %>
+			<% end_control %>
 		
+		</div>
 	</div>
 
-	<div class="cms-content-fields center">
-		<div id="cms-content-listview">
-			$EditForm
-		</div>
-		<div id="cms-content-treeview">
-			<i>Not implemented yet</i>
-		</div>
-		<div id="cms-content-galleryview">
-			<i>Not implemented yet</i>
-		</div>
+	<div class="cms-content-fields center ui-widget-content" data-layout-type="border">
+
+		$Tools
+		
+		$EditForm
+		
 	</div>
 	
 </div>

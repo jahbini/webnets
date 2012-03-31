@@ -62,7 +62,7 @@ class DataQuery {
 			}
 		}
 		
-		if(!$matched) user_error("Couldn't find $fieldExpression in the query filter.", E_USER_WARNING);
+		if(!$matched) throw new InvalidArgumentException("Couldn't find $fieldExpression in the query filter.");
 		
 		return $this;
 	}
@@ -373,15 +373,15 @@ class DataQuery {
 	/**
 	 * Set the limit of this query
 	 */
-	function limit($limit) {
+	function limit($limit, $offset = 0) {
 		$clone = $this;
-		$clone->query->limit($limit);
+		$clone->query->limit($limit, $offset);
 		return $clone;
 	}
 
 	/**
 	 * Add a join clause to this query
-	 * @deprecated Use innerJoin() or leftJoin() instead.
+	 * @deprecated 3.0 Use innerJoin() or leftJoin() instead.
 	 */
 	function join($join) {
 		Deprecation::notice('3.0', 'Use innerJoin() or leftJoin() instead.');
@@ -503,7 +503,19 @@ class DataQuery {
 		}
 		
 		return $modelClass;
-	}	
+	}
+	
+	/**
+	 * Removes the result of query from this query.
+	 * 
+	 * @param DataQuery $subtractQuery
+	 * @param string $field 
+	 */
+	public function subtract(DataQuery $subtractQuery, $field='ID') {
+		$subSelect= $subtractQuery->getFinalisedQuery();
+		$subSelect->select($this->expressionForField($field, $subSelect));
+		$this->where($this->expressionForField($field, $this).' NOT IN ('.$subSelect->sql().')');
+	}
 
 	/**
 	 * Select the given fields from the given table

@@ -13,7 +13,6 @@ class Group extends DataObject {
 		"Code" => "Varchar",
 		"Locked" => "Boolean",
 		"Sort" => "Int",
-		"IPRestrictions" => "Text",
 		"HtmlEditorConfig" => "Varchar"
 	);
 	
@@ -56,6 +55,7 @@ class Group extends DataObject {
 	
 	/**
 	 * Caution: Only call on instances, not through a singleton.
+	 * The "root group" fields will be created through {@link SecurityAdmin->EditForm()}.
 	 *
 	 * @return FieldList
 	 */
@@ -66,39 +66,42 @@ class Group extends DataObject {
 			new TabSet("Root",
 				new Tab('Members', _t('SecurityAdmin.MEMBERS', 'Members'),
 					new TextField("Title", $this->fieldLabel('Title')),
-					$memberList = new MemberTableField(
-						(Controller::has_curr()) ? Controller::curr() : new Controller(),
-						"Members",
-						$this,
-						null,
-						false
-					)
+					$parentidfield = Object::create('DropdownField',
+						'ParentID', 
+						$this->fieldLabel('Parent'), 
+						DataList::create('Group')->exclude('ID', $this->ID)->map('ID', 'Breadcrumbs')
+					)->setEmptyString(' ')
 				),
 
 				$permissionsTab = new Tab('Permissions', _t('SecurityAdmin.PERMISSIONS', 'Permissions'),
-					new PermissionCheckboxSetField(
+					$permissionsField = new PermissionCheckboxSetField(
 						'Permissions',
 						false,
 						'Permission',
 						'GroupID',
 						$this
 					)
-				),
-
-				new Tab('IPAddresses', _t('Security.IPADDRESSES', 'IP Addresses'),
-					new LiteralField("", _t('SecurityAdmin.IPADDRESSESHELP',"<p>You can restrict this group to a particular 
-						IP address range (one range per line). <br />Ranges can be in any of the following forms: <br />
-						203.96.152.12<br />
-						203.96.152/24<br />
-						203.96/16<br />
-						203/8<br /><br />If you enter one or more IP address ranges in this box, then members will only get
-						the rights of being in this group if they log on from one of the valid IP addresses.  It won't prevent
-						people from logging in.  This is because the same user might have to log in to access parts of the
-						system without IP address restrictions.")),
-					new TextareaField("IPRestrictions", "IP Ranges", 10)
 				)
 			)
 		);
+		
+		$parentidfield->setRightTitle('<span class="aligned-right-label">' . _t('Group.GroupReminder', 'If you choose a parent group, this group will take all it\'s roles') . '</span>');
+
+		// Filter permissions
+		// TODO SecurityAdmin coupling, not easy to get to the form fields through GridFieldDetailForm
+		$permissionsField->setHiddenPermissions(SecurityAdmin::$hidden_permissions);
+
+		if($this->ID) {
+			$config = new GridFieldConfig_RelationEditor();
+			$config->addComponents(new GridFieldExportButton());
+			$config->getComponentByType('GridFieldAddExistingAutocompleter')
+				->setResultsFormat('$Title ($Email)')->setSearchFields(array('FirstName', 'Surname', 'Email'));
+			$config->getComponentByType('GridFieldDetailForm')->setValidator(new Member_Validator());
+			$memberList = Object::create('GridField', 'Members',false, $this->Members(), $config)->addExtraClass('members_grid');
+			// @todo Implement permission checking on GridField
+			//$memberList->setPermissions(array('edit', 'delete', 'export', 'add', 'inlineadd'));
+			$fields->addFieldToTab('Root.Members', $memberList);
+		}
 		
 		// Only add a dropdown for HTML editor configurations if more than one is available.
 		// Otherwise Member->getHtmlEditorConfigForCMS() will default to the 'cms' configuration.
@@ -116,7 +119,6 @@ class Group extends DataObject {
 
 		if(!Permission::check('EDIT_PERMISSIONS')) {
 			$fields->removeFieldFromTab('Root', 'Permissions');
-			$fields->removeFieldFromTab('Root', 'IP Addresses');
 		}
 
 		// Only show the "Roles" tab if permissions are granted to edit them,
@@ -127,34 +129,47 @@ class Group extends DataObject {
 				new LiteralField( 
 					"",  
 					"<p>" .  
-					_t('SecurityAdmin.ROLESDESCRIPTION', 
-						"This section allows you to add roles to this group. Roles are logical groupings of permissions, which can be editied in the Roles tab" 
-					) .  
+					_t(
+						'SecurityAdmin.ROLESDESCRIPTION', 
+						"Roles are predefined sets of permissions, and can be assigned to groups.<br />They are inherited from parent groups if required."
+					) . '<br />' . 
+					sprintf(
+						'<a href="%s" class="add-role">%s</a>',
+						singleton('SecurityAdmin')->Link('show/root#Root_Roles'),
+						// TODO This should include #Root_Roles to switch directly to the tab,
+						// but tabstrip.js doesn't display tabs when directly adressed through a URL pragma
+						_t('Group.RolesAddEditLink', 'Manage roles')
+					) .
 					 "</p>" 
 				) 
 			);
 			
 			// Add roles (and disable all checkboxes for inherited roles)
 			$allRoles = Permission::check('ADMIN') ? DataObject::get('PermissionRole') : DataObject::get('PermissionRole', 'OnlyAdminCanApply = 0');
-			$groupRoles = $this->Roles();
-			$inheritedRoles = new ArrayList();
-			$ancestors = $this->getAncestors();
-			foreach($ancestors as $ancestor) {
-				$ancestorRoles = $ancestor->Roles();
-				if($ancestorRoles) $inheritedRoles->merge($ancestorRoles);
+			if($this->ID) {
+				$groupRoles = $this->Roles();
+				$inheritedRoles = new ArrayList();
+				$ancestors = $this->getAncestors();
+				foreach($ancestors as $ancestor) {
+					$ancestorRoles = $ancestor->Roles();
+					if($ancestorRoles) $inheritedRoles->merge($ancestorRoles);
+				}
+				$groupRoleIDs = $groupRoles->column('ID') + $inheritedRoles->column('ID');
+				$inheritedRoleIDs = $inheritedRoles->column('ID');
+			} else {
+				$groupRoleIDs = array();
+				$inheritedRoleIDs = array();
 			}
-			$fields->findOrMakeTab('Root.Roles', 'Root.' . _t('SecurityAdmin.ROLES', 'Roles'));
-			$fields->addFieldToTab(
-				'Root.Roles',
-				$rolesField = new CheckboxSetField('Roles', 'Roles', $allRoles)
-			);
-			$rolesField->setDefaultItems($inheritedRoles->column('ID'));
-			$rolesField->setDisabledItems($inheritedRoles->column('ID'));
+
+			$rolesField = Object::create('ListboxField', 'Roles', false, $allRoles->map()->toArray())
+					->setMultiple(true)
+					->setDefaultItems($groupRoleIDs)
+					->setAttribute('data-placeholder', _t('Group.AddRole', 'Add a role for this group'))
+					->setDisabledItems($inheritedRoleIDs);	
+			if(!$allRoles->Count()) $rolesField->setAttribute('data-placeholder', _t('Group.NoRoles', 'No roles found'));
+			$fields->addFieldToTab('Root.Roles', $rolesField);
 		} 
 		
-		$memberList->setPermissions(array('edit', 'delete', 'export', 'add', 'inlineadd'));
-		$memberList->setPopupCaption(_t('SecurityAdmin.VIEWUSER', 'View User'));
-
 		$fields->push($idField = new HiddenField("ID"));
 		
 		$this->extend('updateCMSFields', $fields);
@@ -174,7 +189,6 @@ class Group extends DataObject {
 		$labels['Code'] = _t('Group.Code', 'Group Code', PR_MEDIUM, 'Programmatical code identifying a group');
 		$labels['Locked'] = _t('Group.Locked', 'Locked?', PR_MEDIUM, 'Group is locked in the security administration area');
 		$labels['Sort'] = _t('Group.Sort', 'Sort Order');
-		$labels['IPRestrictions'] = _t('Group.IPRestrictions', 'IP Address Restrictions');
 		if($includerelations){
 			$labels['Parent'] = _t('Group.Parent', 'Parent Group', PR_MEDIUM, 'One group has one parent group');
 			$labels['Permissions'] = _t('Group.has_many_Permissions', 'Permissions', PR_MEDIUM, 'One group has many permissions');
@@ -194,27 +208,26 @@ class Group extends DataObject {
 	}
 	
 	/**
-	 * Overloaded getter.
-	 *
-	 * @TODO Where is this used, why is this overloaded?
+	 * Get many-many relation to {@link Member},
+	 * including all members which are "inherited" from children groups of this record.
+	 * See {@link DirectMembers()} for retrieving members without any inheritance.
 	 * 
-	 * @param $limit string SQL
-	 * @param $offset int
-	 * @param $filter string SQL
-	 * @param $sort string SQL
-	 * @param $join string SQL
-	 * @return ComponentSet
+	 * @param String
+	 * @return ManyManyList
 	 */
 	public function Members($filter = "", $sort = "", $join = "", $limit = "") {
-		// Get a DataList of the relevant groups
-		$groups = DataList::create("Group")->byIDs($this->collateFamilyIDs());
-		
 		if($sort || $join || $limit) {
 			Deprecation::notice('3.0', "The sort, join, and limit arguments are deprcated, use sort(), join() and limit() on the resulting DataList instead.");
 		}
 
-		// Call the relation method on the DataList to get the members from all the groups
-		$result = $groups->relation('DirectMembers')->where($filter)->sort($sort)->limit($limit);
+		// First get direct members as a base result
+		$result = $this->DirectMembers();
+		// Remove the default foreign key filter in prep for re-applying a filter containing all children groups.
+		// Filters are conjunctive in DataQuery by default, so this filter would otherwise overrule any less specific ones.
+		$result->dataQuery()->removeFilterOn('Group_Members');
+		// Now set all children groups as a new foreign key
+		$groups = DataList::create("Group")->byIDs($this->collateFamilyIDs());
+		$result = $result->forForeignID($groups->column('ID'))->where($filter)->sort($sort)->limit($limit);
 		if($join) $result = $result->join($join);
 
 		return $result;
@@ -412,28 +425,6 @@ class Group extends DataObject {
 	}
 	
 	/**
-	 * Returns true if the given IP address is granted access to this group.
-	 * For unrestricted groups, this always returns true.
-	 */
-	function allowedIPAddress($ip) {
-		if(!$this->IPRestrictions) return true;
-		if(!$ip) return false;
-		
-		$ipPatterns = explode("\n", $this->IPRestrictions);
-		foreach($ipPatterns as $ipPattern) {
-			$ipPattern = trim($ipPattern);
-			if(preg_match('/^([0-9]+\.[0-9]+\.[0-9]+\.[0-9]+)$/', $ipPattern, $matches)) {
-				if($ip == $ipPattern) return true;
-			} else if(preg_match('/^([0-9]+\.[0-9]+\.[0-9]+)\/24$/', $ipPattern, $matches)
-					|| preg_match('/^([0-9]+\.[0-9]+)\/16$/', $ipPattern, $matches)
-					|| preg_match('/^([0-9]+)\/8$/', $ipPattern, $matches)) {
-				if(substr($ip, 0, strlen($matches[1])) == $matches[1]) return true;
-			}
-		}
-		return false;
-	}
-	
-	/**
 	 * Add default records to database.
 	 *
 	 * This function is called whenever the database is built, after the
@@ -452,7 +443,6 @@ class Group extends DataObject {
 			$authorGroup->write();
 			Permission::grant($authorGroup->ID, 'CMS_ACCESS_CMSMain');
 			Permission::grant($authorGroup->ID, 'CMS_ACCESS_AssetAdmin');
-			Permission::grant($authorGroup->ID, 'CMS_ACCESS_CommentAdmin');
 			Permission::grant($authorGroup->ID, 'CMS_ACCESS_ReportAdmin');
 			Permission::grant($authorGroup->ID, 'SITETREE_REORGANISE');
 		}
@@ -492,4 +482,4 @@ class Group extends DataObject {
 	}
 }
 	
-?>
+

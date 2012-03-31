@@ -32,10 +32,10 @@
 				this.bind('change', function(e) {
 					if(!self.val()) return;
 					
-					self.attr('disabled', 'disabled').parents('.field:first').addClass('loading');
+					self.addClass('disabled').parents('.field:first').addClass('loading');
 					var oldVal = self.val();
 					self.suggest(oldVal, function(data) {
-						self.removeAttr('disabled').parents('.field:first').removeClass('loading');
+						self.removeClass('disabled').parents('.field:first').removeClass('loading');
 						var newVal = decodeURIComponent(data.value);
 						self.val(newVal);
 						
@@ -95,7 +95,7 @@
 			 * Update the page title heading when page title changes
 			 */
 			updatePageTitleHeading: function() {
-				$('#page-title-heading').html(this.val());
+				$('#page-title-heading').text(this.val());
 			},
 	
 			/**
@@ -136,6 +136,9 @@
 			onmatch : function() {
 				var self = this;
 				this.find(':input[name=ParentType]').bind('click', function(e) {self._toggleSelection(e);});
+				this.find('.TreeDropdownField').bind('change', function(e) {self._changeParentId(e);});
+				
+				this._changeParentId();
 				this._toggleSelection();
 				
 				this._super();
@@ -151,8 +154,22 @@
 				var selected = this.find(':input[name=ParentType]:checked').val();
 				// reset parent id if 'root' radiobutton is selected
 				if(selected == 'root') this.find(':input[name=ParentID]').val(0);
+				// otherwise use the old value
+				else this.find(':input[name=ParentID]').val(this.find('#Form_EditForm_ParentType_subpage').data('parentIdValue'));
 				// toggle tree dropdown based on selection
 				this.find('#ParentID').toggle(selected != 'root');
+			},
+			
+			/**
+			 * Function: _changeParentId
+			 * 
+			 * Parameters:
+			 *  (Event) e
+			 */
+			_changeParentId: function(e) {
+				var value = this.find(':input[name=ParentID]').val();
+				// set a data attribute so we know what to use in _toggleSelection
+				this.find('#Form_EditForm_ParentType_subpage').data('parentIdValue', value);
 			}
 		});
 
@@ -172,7 +189,15 @@
 				else if(this.attr('id') == 'CanCreateTopLevelType') dropdown = $('#CreateTopLevelGroups');
 		
 				this.find('.optionset :input').bind('change', function(e) {
-					dropdown[e.target.value == 'OnlyTheseUsers' ? 'show' : 'hide']();
+					var wrapper = $(this).closest('.middleColumn').parent('div');
+					if(e.target.value == 'OnlyTheseUsers') {
+						wrapper.addClass('remove-splitter');
+						dropdown['show']();
+					}
+					else {
+						wrapper.removeClass('remove-splitter');
+						dropdown['hide']();	
+					}
 				});
 		
 				// initial state

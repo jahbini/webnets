@@ -4,11 +4,32 @@
  * Subclass of {@link DataList} representing a many_many relation
  */
 class ManyManyList extends RelationList {
+	
 	protected $joinTable;
+	
 	protected $localKey;
+	
 	protected $foreignKey, $foreignID;
 
 	protected $extraFields;
+	
+	/**
+	 * Synonym of the constructor.  Can be chained with literate methods.
+	 * ManyManyList::create("Group","Member","ID", "GroupID")->sort("Title") is legal, but
+	 * new ManyManyList("Group","Member","ID", "GroupID")->sort("Title") is not.
+	 * 
+	 * @param string $dataClass The class of the DataObjects that this will list.
+	 * @param string $joinTable The name of the table whose entries define the content of this many_many relation.
+	 * @param string $localKey The key in the join table that maps to the dataClass' PK.
+	 * @param string $foreignKey The key in the join table that maps to joined class' PK.
+	 * @param string $extraFields A map of field => fieldtype of extra fields on the join table.
+	 * 
+	 * @see ManyManyList::__construct();
+	 * @example ManyManyList::create('Group','Group_Members', 'GroupID', 'MemberID');
+	 */
+	public static function create($dataClass, $joinTable, $localKey, $foreignKey, $extraFields = array()) {
+		return new ManyManyList($dataClass, $joinTable, $localKey, $foreignKey, $extraFields = array());
+	}
 
 	/**
 	 * Create a new ManyManyList object.
@@ -16,18 +37,17 @@ class ManyManyList extends RelationList {
 	 * A ManyManyList object represents a list of DataObject records that correspond to a many-many
 	 * relationship.  In addition to, 
 	 * 
-	 * 
-	 * 
 	 * Generation of the appropriate record set is left up to the caller, using the normal
 	 * {@link DataList} methods.  Addition arguments are used to support {@@link add()}
 	 * and {@link remove()} methods.
 	 * 
-	 * @param $dataClass The class of the DataObjects that this will list.
-	 * @param $joinTable The name of the table whose entries define the content of this
-	 * many_many relation.
-	 * @param $localKey The key in the join table that maps to the dataClass' PK.
-	 * @param $foreignKey The key in the join table that maps to joined class' PK.
-	 * @param $extraFields A map of field => fieldtype of extra fields on the join table.
+	 * @param string $dataClass The class of the DataObjects that this will list.
+	 * @param string $joinTable The name of the table whose entries define the content of this many_many relation.
+	 * @param string $localKey The key in the join table that maps to the dataClass' PK.
+	 * @param string $foreignKey The key in the join table that maps to joined class' PK.
+	 * @param string $extraFields A map of field => fieldtype of extra fields on the join table.
+	 * 
+	 * @example new ManyManyList('Group','Group_Members', 'GroupID', 'MemberID');
 	 */
 	function __construct($dataClass, $joinTable, $localKey, $foreignKey, $extraFields = array()) {
 		parent::__construct($dataClass);
@@ -53,7 +73,7 @@ class ManyManyList extends RelationList {
 		if(is_array($this->foreignID)) {
 			return "\"$this->joinTable\".\"$this->foreignKey\" IN ('" . 
 				implode("', '", array_map('Convert::raw2sql', $this->foreignID)) . "')";
-		} else if($this->foreignID){
+		} else if($this->foreignID !== null){
 			return "\"$this->joinTable\".\"$this->foreignKey\" = '" . 
 				Convert::raw2sql($this->foreignID) . "'";
 		}
@@ -73,25 +93,24 @@ class ManyManyList extends RelationList {
 		if(!$this->foreignID) {
 			throw new Exception("ManyManyList::add() can't be called until a foreign ID is set", E_USER_WARNING);
 		}
-		if(is_array($this->foreignID)) {
-			throw new Exception("ManyManyList::add() can't be called on a list linked to mulitple foreign IDs", E_USER_WARNING);
-		}
-
+		
 		// Delete old entries, to prevent duplication
 		$this->removeById($itemID);
 
-		// Insert new entry
-		$manipulation = array();
-		$manipulation[$this->joinTable]['command'] = 'insert';
+		// Insert new entry/entries
+		foreach((array)$this->foreignID as $foreignID) {
+			$manipulation = array();
+			$manipulation[$this->joinTable]['command'] = 'insert';
 
-		if($extraFields) foreach($extraFields as $k => $v) {
-			$manipulation[$this->joinTable]['fields'][$k] = "'" . Convert::raw2sql($v) . "'";
+			if($extraFields) foreach($extraFields as $k => $v) {
+				$manipulation[$this->joinTable]['fields'][$k] = "'" . Convert::raw2sql($v) . "'";
+			}
+
+			$manipulation[$this->joinTable]['fields'][$this->localKey] = $itemID;
+			$manipulation[$this->joinTable]['fields'][$this->foreignKey] = $foreignID;
+
+			DB::manipulate($manipulation);
 		}
-
-		$manipulation[$this->joinTable]['fields'][$this->localKey] = $itemID;
-		$manipulation[$this->joinTable]['fields'][$this->foreignKey] = $this->foreignID;
-
-		DB::manipulate($manipulation);
 	}
 
 	/**

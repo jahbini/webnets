@@ -1174,20 +1174,6 @@ class DataObject extends ViewableData implements DataObjectInterface, i18nEntity
 	}
 	
 	/**
-	 * Perform a write without affecting the version table.
-	 * On objects without versioning.
-	 *
-	 * @return int The ID of the record
-	 */
-	public function writeWithoutVersion() {
-		$this->changed['Version'] = 1;
-		if(!isset($this->record['Version'])) {
-			$this->record['Version'] = -1;
-		}
-		return $this->write();
-	}
-
-	/**
 	 * Delete this data object.
 	 * $this->onBeforeDelete() gets called.
 	 * Note that in Versioned objects, both Stage and Live will be deleted.
@@ -1323,7 +1309,7 @@ class DataObject extends ViewableData implements DataObjectInterface, i18nEntity
 	 *
 	 * @return HasManyList The components of the one-to-many relationship.
 	 */
-	public function getComponents($componentName, $filter = "", $sort = "", $join = "", $limit = "") {
+	public function getComponents($componentName, $filter = "", $sort = "", $join = "", $limit = null) {
 		$result = null;
 
 		if(!$componentClass = $this->has_many($componentName)) {
@@ -1334,7 +1320,7 @@ class DataObject extends ViewableData implements DataObjectInterface, i18nEntity
 		
 		$result = new HasManyList($componentClass, $joinField);
 		if($this->model) $result->setModel($this->model);
-		if($this->ID) $result->setForeignID($this->ID);
+		$result->setForeignID($this->ID);
 
 		$result = $result->where($filter)->limit($limit)->sort($sort);
 		if($join) $result = $result->join($join);
@@ -1387,7 +1373,7 @@ class DataObject extends ViewableData implements DataObjectInterface, i18nEntity
 			return substr($remoteClass, $fieldPos + 1) . 'ID';
 		}
 		
-		$remoteRelations = array_flip(Object::combined_static($remoteClass, 'has_one', 'DataObject'));
+		$remoteRelations = array_flip(Config::inst()->get($remoteClass, 'has_one'));
 		
 		// look for remote has_one joins on this class or any parent classes
 		foreach(array_reverse(ClassInfo::ancestry($this)) as $class) {
@@ -1426,7 +1412,7 @@ class DataObject extends ViewableData implements DataObjectInterface, i18nEntity
 
 		// If this is called on a singleton, then we return an 'orphaned relation' that can have the
 		// foreignID set elsewhere.
-		if($this->ID) $result->setForeignID($this->ID);
+		$result->setForeignID($this->ID);
 			
 		return $result->where($filter)->sort($sort)->limit($limit);
 	}
@@ -1474,7 +1460,7 @@ class DataObject extends ViewableData implements DataObjectInterface, i18nEntity
 	 * @return string|array
 	 */
 	public function belongs_to($component = null, $classOnly = true) {
-		$belongsTo = Object::combined_static($this->class, 'belongs_to', 'DataObject');
+		$belongsTo = $this->config()->belongs_to;
 		
 		if($component) {
 			if($belongsTo && array_key_exists($component, $belongsTo)) {
@@ -1542,7 +1528,7 @@ class DataObject extends ViewableData implements DataObjectInterface, i18nEntity
 	 * @return string|array
 	 */
 	public function has_many($component = null, $classOnly = true) {
-		$hasMany = Object::combined_static($this->class, 'has_many', 'DataObject');
+		$hasMany = $this->config()->has_many;
 		
 		if($component) {
 			if($hasMany && array_key_exists($component, $hasMany)) {
@@ -2493,11 +2479,17 @@ class DataObject extends ViewableData implements DataObjectInterface, i18nEntity
 	 *
 	 * @return mixed The objects matching the filter, in the class specified by $containerClass
 	 */
-	public static function get($callerClass, $filter = "", $sort = "", $join = "", $limit = "", $containerClass = "DataList") {
+	public static function get($callerClass, $filter = "", $sort = "", $join = "", $limit = null, $containerClass = "DataList") {
 		// Todo: Determine if we can deprecate for 3.0.0 and use DI or something instead
 		// Todo: Make the $containerClass method redundant
 		if($containerClass != "DataList") user_error("The DataObject::get() \$containerClass argument has been deprecated", E_USER_NOTICE);
-		$result = DataList::create($callerClass)->where($filter)->sort($sort)->limit($limit);
+		$result = DataList::create($callerClass)->where($filter)->sort($sort);
+		if($limit && strpos($limit, ',') !== false) {
+			$limitArguments = explode(',', $limit);
+			$result->limit($limitArguments[1],$limitArguments[0]);
+		} elseif($limit) {
+			$result->limit($limit);
+		}
 		if($join) $result = $result->join($join);
 		$result->setModel(DataModel::inst());
 		return $result;
@@ -2763,7 +2755,7 @@ class DataObject extends ViewableData implements DataObjectInterface, i18nEntity
 		// Only build the table if we've actually got fields
 		$fields = self::database_fields($this->class);
 		$extensions = self::database_extensions($this->class);
-		
+
 		$indexes = $this->databaseIndexes();
 
 		if($fields) {
@@ -3082,6 +3074,7 @@ class DataObject extends ViewableData implements DataObjectInterface, i18nEntity
 	 * This is a map from field names to field type. The field
 	 * type should be a class that extends .
 	 * @var array
+	 * @config
 	 */
 	public static $db = null;
 

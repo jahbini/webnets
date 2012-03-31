@@ -136,7 +136,7 @@ class DateField extends TextField {
 		}
 		
 		$config = array_filter($config);
-		$this->addExtraClass(Convert::raw2json($config));
+		foreach($config as $k => $v) $this->setAttribute('data-' . $k, $v);
 		
 		// Three separate fields for day, month and year
 		if($this->getConfig('dmyfields')) {
@@ -229,6 +229,8 @@ class DateField extends TextField {
 				}
 			}
 		}
+
+		return $this;
 	}
 	
 	/**
@@ -248,104 +250,6 @@ class DateField extends TextField {
 		$field->readonly = true;
 		
 		return $field;
-	}
-	
-	function jsValidation() {
-		// JavaScript validation of locales other than en_NZ are not supported at the moment...
-		if($this->getLocale() != 'en_NZ') return;
-		
-		$formID = $this->form->FormName();
-
-		if(Validator::get_javascript_validator_handler() == 'none') return true;
-
-		if($this->getConfig('dmyfields')) {
-			$error = _t('DateField.VALIDATIONJS', 'Please enter a valid date format.');
-			// Remove hardcoded date formats from translated strings
-			$error = preg_replace('/\(.*\)/', '', $error);
-			$error .= ' (' . $this->getConfig('dateformat') .')';
-			
-			$jsFunc =<<<JS
-Behaviour.register({
-	"#$formID": {
-		validateDMYDate: function(fieldName) {
-			var day_value = \$F(_CURRENT_FORM.elements[fieldName+'[day]']);
-			var month_value = \$F(_CURRENT_FORM.elements[fieldName+'[month]']);
-			var year_value = \$F(_CURRENT_FORM.elements[fieldName+'[year]']);
-
-			// TODO NZ specific
-			var value = day_value + '/' + month_value + '/' + year_value;
-			if(value && value.length > 0 && !value.match(/^[0-9]{1,2}\/[0-9]{1,2}\/([0-9][0-9]){1,2}\$/)) {
-				validationError(_CURRENT_FORM.elements[fieldName+'[day]'],"$error","validation",false);
-
-				return false;
-			}
-			
-			return true;
-		}
-	}
-});
-JS;
-			Requirements :: customScript($jsFunc, 'func_validateDMYDate_'.$formID);
-
-			return <<<JS
-	if(\$('$formID')){
-		if(typeof fromAnOnBlur != 'undefined'){
-			if(fromAnOnBlur.name == '$this->name')
-				\$('$formID').validateDMYDate('$this->name');
-		}else{
-			\$('$formID').validateDMYDate('$this->name');
-		}
-	}
-JS;
-		} else {
-			$error = _t('DateField.VALIDATIONJS', 'Please enter a valid date format (DD/MM/YYYY).');
-			$jsFunc =<<<JS
-Behaviour.register({
-	"#$formID": {
-		validateDate: function(fieldName) {
-
-			var el = _CURRENT_FORM.elements[fieldName];
-			if(el)
-			var value = \$F(el);
-
-			if(Element.hasClassName(el, 'dmydate')) {
-				// dmy triple field validation
-				var day_value = \$F(_CURRENT_FORM.elements[fieldName+'[day]']);
-				var month_value = \$F(_CURRENT_FORM.elements[fieldName+'[month]']);
-				var year_value = \$F(_CURRENT_FORM.elements[fieldName+'[year]']);
-
-				// TODO NZ specific
-				var value = day_value + '/' + month_value + '/' + year_value;
-				if(value && value.length > 0 && !value.match(/^[0-9]{1,2}\/[0-9]{1,2}\/([0-9][0-9]){1,2}\$/)) {
-					validationError(_CURRENT_FORM.elements[fieldName+'[day]'],"$error","validation",false);
-					return false;
-				}
-			} else {
-				// single field validation
-				if(value && value.length > 0 && !value.match(/^[0-9]{1,2}\/[0-9]{1,2}\/[0-90-9]{2,4}\$/)) {
-					validationError(el,"$error","validation",false);
-					return false;
-				}
-			}
-
-			return true;
-		}
-	}
-});
-JS;
-			Requirements :: customScript($jsFunc, 'func_validateDate_'.$formID);
-
-			return <<<JS
-if(\$('$formID')){
-	if(typeof fromAnOnBlur != 'undefined'){
-		if(fromAnOnBlur.name == '$this->name')
-			\$('$formID').validateDate('$this->name');
-	}else{
-		\$('$formID').validateDate('$this->name');
-	}
-}
-JS;
-		}
 	}
 
 	/**
@@ -470,6 +374,7 @@ JS;
 	 */
 	function setLocale($locale) {
 		$this->locale = $locale;
+		return $this;
 	}
 	
 	/**
@@ -493,6 +398,7 @@ JS;
 		}
 		
 		$this->config[$name] = $val;
+		return $this;
 	}
 	
 	/**
@@ -532,10 +438,6 @@ class DateField_Disabled extends DateField {
 	
 	function Type() { 
 		return "date_disabled readonly";
-	}
-	
-	function jsValidation() {
-		return null;
 	}
 	
 	function validate($validator) {
@@ -596,7 +498,6 @@ class DateField_View_JQuery {
 	function onAfterRender($html) {
 		if($this->getField()->getConfig('showcalendar')) {
 			Requirements::javascript(THIRDPARTY_DIR . '/jquery/jquery.js');
-			Requirements::javascript(SAPPHIRE_DIR . '/javascript/jquery_improvements.js');	
 			Requirements::css(THIRDPARTY_DIR . '/jquery-ui-themes/smoothness/jquery-ui.css');
 			Requirements::javascript(SAPPHIRE_DIR . '/thirdparty/jquery-ui/jquery-ui.js');
 			
@@ -612,7 +513,6 @@ class DateField_View_JQuery {
 					));
 			}
 			
-			Requirements::javascript(THIRDPARTY_DIR . "/jquery-metadata/jquery.metadata.js");
 			Requirements::javascript(SAPPHIRE_DIR . "/javascript/DateField.js");
 		}
 		
@@ -704,4 +604,4 @@ class DateField_View_JQuery {
 		return preg_replace($patterns, $replacements, $format);
 	}
 }
-?>
+

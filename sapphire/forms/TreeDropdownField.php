@@ -54,6 +54,10 @@ class TreeDropdownField extends FormField {
 	 * @ignore
 	 */
 	protected $sourceObject, $keyField, $labelField, $filterCallback, $searchCallback, $baseID = 0;
+	/**
+	 * @var string default child method in Hierarcy->getChildrenAsUL
+	 */
+	protected $childrenMethod = 'AllChildrenIncludingDeleted';
 	
 	/**
 	 * Used by field search to leave only the relevant entries
@@ -98,6 +102,7 @@ class TreeDropdownField extends FormField {
 	 */
 	public function setTreeBaseID($ID) {
 		$this->baseID = (int) $ID;
+		return $this;
 	}
 	
 	/**
@@ -112,6 +117,7 @@ class TreeDropdownField extends FormField {
 		}
 		
 		$this->filterCallback = $callback;
+		return $this;
 	}
 	
 	/**
@@ -126,6 +132,7 @@ class TreeDropdownField extends FormField {
 		}
 		
 		$this->searchCallback = $callback;
+		return $this;
 	}
 
 	public function getShowSearch() {
@@ -137,6 +144,17 @@ class TreeDropdownField extends FormField {
 	 */
 	public function setShowSearch($bool) {
 		$this->showSearch = $bool;
+		return $this;
+	}
+
+	/**
+	 * @param $method The parameter to ChildrenMethod to use when calling Hierarchy->getChildrenAsUL in {@link Hierarchy}.
+	 * The method specified determined the structure of the returned list. Use "ChildFolders" in place of the default
+	 * to get a drop-down listing with only folders, i.e. not including the child elements  in the currently selected folder.
+	 * See {@link Hierarchy} for a complete list of possible methods.
+	 */
+	public function setChildrenMethod($method) {
+		$this->childrenMethod = $method;
 	}
 
 	/**
@@ -146,7 +164,6 @@ class TreeDropdownField extends FormField {
 		Requirements::add_i18n_javascript(SAPPHIRE_DIR . '/javascript/lang');
 		
 		Requirements::javascript(SAPPHIRE_DIR . '/thirdparty/jquery/jquery.js');
-		Requirements::javascript(SAPPHIRE_DIR . '/javascript/jquery_improvements.js');
 		Requirements::javascript(SAPPHIRE_DIR . '/thirdparty/jquery-entwine/dist/jquery.entwine-dist.js');
 		Requirements::javascript(SAPPHIRE_DIR . '/thirdparty/jstree/jquery.jstree.js');
 		Requirements::javascript(SAPPHIRE_DIR . '/javascript/TreeDropdownField.js');
@@ -203,12 +220,11 @@ class TreeDropdownField extends FormField {
 		$isSubTree = false;
 
 		$this->search = Convert::Raw2SQL($request->requestVar('search'));
-
 		$ID = (is_numeric($request->latestparam('ID'))) ? (int)$request->latestparam('ID') : (int)$request->requestVar('ID');
-		if($ID) {
+		$forceFullTree = $request->requestVar('forceFullTree')?$request->requestVar('forceFullTree'):false;
+		if($ID && !$forceFullTree) {
 			$obj       = DataObject::get_by_id($this->sourceObject, $ID);
 			$isSubTree = true;
-			
 			if(!$obj) {
 				throw new Exception (
 					"TreeDropdownField->tree(): the object #$ID of type $this->sourceObject could not be found"
@@ -240,14 +256,13 @@ class TreeDropdownField extends FormField {
 				$obj->markToExpose($this->objectForKey($value));
 			}
 		}
-
 		$eval = '"<li id=\"selector-' . $this->getName() . '-{$child->' . $this->keyField . '}\" data-id=\"$child->' . $this->keyField . '\" class=\"class-$child->class"' .
 				' . $child->markingClasses() . "\"><a rel=\"$child->ID\">" . $child->' . $this->labelField . ' . "</a>"';
-		
+
 		if($isSubTree) {
-			return substr(trim($obj->getChildrenAsUL('', $eval, null, true)), 4, -5);
+			return substr(trim($obj->getChildrenAsUL('', $eval, null, true, $this->childrenMethod)), 4, -5);
 		} else {
-			return $obj->getChildrenAsUL('class="tree"', $eval, null, true);
+			return $obj->getChildrenAsUL('class="tree"', $eval, null, true, $this->childrenMethod);
 		}
 	}
 

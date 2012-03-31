@@ -32,15 +32,7 @@ class FormAction extends FormField {
 	 */
 	public $useButtonTag = false;
 	
-	private $buttonContent = null;
-	
-	/**
-	 * Add content inside a button field.
-	 */
-	function setButtonContent($content) {
-		$this->buttonContent = (string) $content;
-	}
-	
+	protected $buttonContent = null;
 	
 	/**
 	 * Create a new action button.
@@ -67,6 +59,7 @@ class FormAction extends FormField {
 	 */
 	function setFullAction($fullAction) {
 		$this->action = $fullAction;
+		return $this;
 	}
 
 	function Field($properties = array()) {
@@ -74,11 +67,15 @@ class FormAction extends FormField {
 			$properties,
 			array(
 				'Name' => $this->action,
-				'Title' => ($this->description) ? $this->description : $this->Title(),
+				'Title' => ($this->description && !$this->useButtonTag) ? $this->description : $this->Title(),
 				'UseButtonTag' => $this->useButtonTag
 			)
 		);
 		return $this->customise($properties)->renderWith($this->getTemplate());
+	}
+	
+	function FieldHolder() {
+		return $this->Field();
 	}
 
 	public function Type() {
@@ -91,9 +88,40 @@ class FormAction extends FormField {
 			array(
 				'disabled' => ($this->isReadonly() || $this->isDisabled()),
 				'value' => $this->Title(),
-				'type' => ($this->useButtonTag) ? null : 'submit'
+				'type' => ($this->useButtonTag) ? null : 'submit',
+				'title' => ($this->useButtonTag) ? $this->description : null,
 			)
 		);
+	}
+
+	/**
+	 * Add content inside a button field.
+	 */
+	function setButtonContent($content) {
+		$this->buttonContent = (string) $content;
+		return $this;
+	}
+
+	/**
+	 * @return String
+	 */
+	function getButtonContent() {
+		return $this->buttonContent;
+	}
+
+	/**
+	 * @param Boolean
+	 */
+	public function setUseButtonTag($bool) {
+		$this->useButtonTag = $bool;
+		return $this;
+	}
+
+	/**
+	 * @return Boolean
+	 */
+	public function getUseButtonTag() {
+		return $this->useButtonTag;
 	}
 
 	function extraClass() {

@@ -6,7 +6,7 @@
  * @package cms
  * @subpackage assets
  */
-class AssetAdmin extends LeftAndMain {
+class AssetAdmin extends LeftAndMain implements PermissionProvider{
 
 	static $url_segment = 'assets';
 	
@@ -22,55 +22,46 @@ class AssetAdmin extends LeftAndMain {
 	 */
 	public static $allowed_max_file_size;
 	
-	static $allowed_actions = array(
+	public static $allowed_actions = array(
 		'addfolder',
 		'DeleteItemsForm',
-		'doUpload',
 		'getsubtree',
 		'movemarked',
 		'removefile',
 		'savefile',
-		'uploadiframe',
-		'UploadForm',
 		'deleteUnusedThumbnails' => 'ADMIN',
-		'SyncForm',
+		'doSync',
+		'filter',
 	);
-	
-	/**
-	 * @var boolean Enables upload of additional textual information
-	 * alongside each file (through multifile.js), which makes
-	 * batch changes easier.
-	 * 
-	 * CAUTION: This is an unstable API which might change.
-	 */
-	public static $metadata_upload_enabled = false;
 	
 	/**
 	 * Return fake-ID "root" if no ID is found (needed to upload files into the root-folder)
 	 */
 	public function currentPageID() {
-		if(isset($_REQUEST['ID']) && is_numeric($_REQUEST['ID']))	{
-			return $_REQUEST['ID'];
+		if(is_numeric($this->request->requestVar('ID')))	{
+			return $this->request->requestVar('ID');
 		} elseif (is_numeric($this->urlParams['ID'])) {
 			return $this->urlParams['ID'];
-		} elseif(is_numeric(Session::get("{$this->class}.currentPage"))) {
+		} elseif(Session::get("{$this->class}.currentPage")) {
 			return Session::get("{$this->class}.currentPage");
 		} else {
-			return "root";
+			return 0;
 		}
 	}
 
 	/**
 	 * Set up the controller, in particular, re-sync the File database with the assets folder./
 	 */
-	function init() {
+	public function init() {
 		parent::init();
 		
 		// Create base folder if it doesnt exist already
 		if(!file_exists(ASSETS_PATH)) Filesystem::makeFolder(ASSETS_PATH);
 
 		Requirements::javascript(CMS_DIR . "/javascript/AssetAdmin.js");
-		Requirements::css(CMS_DIR . "/css/AssetAdmin.css");
+		Requirements::javascript(CMS_DIR . '/javascript/CMSMain.GridField.js');
+		Requirements::add_i18n_javascript(CMS_DIR . '/javascript/lang', false, true);
+		Requirements::css(CMS_DIR . "/css/screen.css");
 
 		Requirements::customScript(<<<JS
 			_TREE_ICONS = {};
@@ -84,229 +75,276 @@ JS
 		
 		CMSBatchActionHandler::register('delete', 'AssetAdmin_DeleteBatchAction', 'Folder');
 	}
-		
+
 	/**
-	 * Return the root 'asset' folder CMSFields
+	 * Returns the files and subfolders contained in the currently selected folder,
+	 * defaulting to the root node. Doubles as search results, if any search parameters
+	 * are set through {@link SearchForm()}.
 	 * 
-	 * @return FieldList
+	 * @return SS_List
 	 */
-	public function RootForm() {
-		return $this->getEditForm(singleton('Folder'));
-	}
-	
-	/**
-	 * Show the content of the upload iframe.  The form is specified by a template.
-	 */
-	function uploadiframe() {
-		Requirements::clear();
-		
-		Requirements::javascript(SAPPHIRE_DIR . "/thirdparty/prototype/prototype.js");
-		Requirements::javascript(SAPPHIRE_DIR . "/thirdparty/behaviour/behaviour.js");
-		//Requirements::javascript(CMS_DIR . "/javascript/LeftAndMain.js");
-		Requirements::javascript(CMS_DIR . "/thirdparty/multifile/multifile.js");
-		Requirements::css(CMS_DIR . "/thirdparty/multifile/multifile.css");
-		Requirements::javascript(SAPPHIRE_DIR . "/thirdparty/jquery/jquery.js");
-		Requirements::javascript(SAPPHIRE_DIR . "/javascript/jquery_improvements.js");
-		Requirements::css(CMS_DIR . "/css/typography.css");
-		Requirements::css(CMS_DIR . "/css/layout.css");
-		Requirements::css(CMS_DIR . "/css/cms_left.css");
-		Requirements::css(CMS_DIR . "/css/cms_right.css");
-		
-		$id = (int) $this->request->param('ID');
-		if($id) $folder = DataObject::get_by_id("Folder", $id);
-		else $folder = singleton('Folder');
-		
-		return array( 'CanUpload' => $folder->canEdit());
-	}
-	
-	/**
-	 * Needs to be enabled through {@link AssetAdmin::$metadata_upload_enabled}
-	 * 
-	 * @return String
-	 */
-	function UploadMetadataHtml() {
-		if(!self::$metadata_upload_enabled) return;
-		
-		$fields = singleton('File')->uploadMetadataFields();
+	public function getList() {
+		$folder = $this->currentPage();
+		$context = $this->getSearchContext();
+		$params = $this->request->requestVar('q');
+		$list = $context->getResults($params);
 
-		// Return HTML with markers for easy replacement
-		$fieldHtml = '';
-		foreach($fields as $field) $fieldHtml = $fieldHtml . $field->FieldHolder();
-		$fieldHtml = preg_replace('/(name|for|id)="(.+?)"/', '$1="$2[__X__]"', $fieldHtml);
+		// Always show folders at the top		
+		$list->sort('(CASE WHEN "File"."ClassName" = \'Folder\' THEN 0 ELSE 1 END)');
 
-		// Icky hax to fix certain elements with fixed ids
-		$fieldHtml = preg_replace('/-([a-zA-Z0-9]+?)\[__X__\]/', '[__X__]-$1', $fieldHtml);
+		// If a search is conducted, check for the "current folder" limitation.
+		// Otherwise limit by the current folder as denoted by the URL.
+		if(!$params || @$params['CurrentFolderOnly']) {
+			$list->filter('ParentID', $folder->ID);
+		}
 
-		return $fieldHtml;
+		// Category filter
+		if(isset($params['AppCategory'])) {
+			$exts = File::$app_categories[$params['AppCategory']];
+			$categorySQLs = array();
+			foreach($exts as $ext) $categorySQLs[] = '"File"."Name" LIKE \'%.' . $ext . '\'';
+			// TODO Use DataList->filterAny() once OR connectives are implemented properly
+			$list->where('(' . implode(' OR ', $categorySQLs) . ')');
+		}
+
+		return $list;
 	}
-	
-	/**
-	 * Return the form object shown in the uploadiframe.
-	 */
-	function UploadForm() {
-		$form = new Form($this,'UploadForm', new FieldList(
-			new HiddenField("ID", "", $this->currentPageID()),
-			new HiddenField("FolderID", "", $this->currentPageID()),
-			// needed because the button-action is triggered outside the iframe
-			new HiddenField("action_doUpload", "", "1"), 
-			new FileField("Files[0]" , _t('AssetAdmin.CHOOSEFILE','Choose file: ')),
-			new LiteralField('UploadButton',"
-				<input type=\"submit\" value=\"". _t('AssetAdmin.UPLOAD', 'Upload Files Listed Below'). "\" name=\"action_upload\" id=\"Form_UploadForm_action_upload\" class=\"action\" />
-			"),
-			new LiteralField('MultifileCode',"
-				<p>" . _t('AssetAdmin.FILESREADY','Files ready to upload:') ."</p>
-				<div id=\"Form_UploadForm_FilesList\"></div>
-			")
-		), new FieldList(
+
+	public function getEditForm($id = null, $fields = null) {
+		$form = parent::getEditForm($id, $fields);
+		$folder = ($id && is_numeric($id)) ? DataObject::get_by_id('Folder', $id, false) : $this->currentPage();
+		$fields = $form->Fields();
+
+		$fields->push(new HiddenField('ID', false, $folder->ID));
+
+		// File listing
+		$gridFieldConfig = GridFieldConfig::create()->addComponents(
+			new GridFieldSortableHeader(),
+			new GridFieldDataColumns(),
+			new GridFieldPaginator(15),
+			new GridFieldEditButton(),
+			new GridFieldDeleteAction(),
+			new GridFieldDetailForm()
+		);
+		$gridField = new GridField('File','Files', $this->getList(), $gridFieldConfig);
+		$gridField->setDisplayFields(array(
+			'StripThumbnail' => '',
+			// 'Parent.FileName' => 'Folder',
+			'Title' => _t('File.Name'),
+			'Created' => _t('AssetAdmin.CREATED', 'Date'),
+			'Size' => _t('AssetAdmin.SIZE', 'Size'),
+		));
+		$gridField->setFieldCasting(array(
+			'Created' => 'Date->Nice'
+		));
+		$gridField->setAttribute(
+			'data-url-folder-template', 
+			Controller::join_links($this->Link('show'), '%s')
+		);
+
+		if($folder->canCreate()) {
+			$uploadBtn = new LiteralField(
+				'UploadButton', 
+				sprintf(
+					'<a class="ss-ui-button ss-ui-action-constructive cms-panel-link" data-target-panel=".cms-content" data-icon="drive-upload" href="%s">%s</a>',
+					Controller::join_links(singleton('CMSFileAddController')->Link(), '?ID=' . $folder->ID),
+					_t('Folder.UploadFilesButton', 'Upload')
+				)
+			);	
+		} else {
+			$uploadBtn = null;
+		}
+
+		if(!$folder->hasMethod('canAddChildren') || ($folder->hasMethod('canAddChildren') && $folder->canAddChildren())) {
+			// TODO Will most likely be replaced by GridField logic
+			$addFolderBtn = new LiteralField(
+				'AddFolderButton', 
+				sprintf(
+					'<a class="ss-ui-button ss-ui-action-constructive cms-add-folder-link" data-icon="add" data-url="%s" href="%s">%s</a>',
+					Controller::join_links($this->Link('AddForm'), '?' . http_build_query(array(
+						'action_doAdd' => 1,
+						'ParentID' => $folder->ID,
+						'SecurityID' => $form->getSecurityToken()->getValue()
+					))),
+					Controller::join_links($this->Link('addfolder'), '?ParentID=' . $folder->ID),
+					_t('Folder.AddFolderButton', 'Add folder')
+				)
+			);
+		} else {
+			$addFolderBtn = '';
+		}
+
+		if($folder->canEdit()) {
+			$syncButton = new LiteralField(
+				'SyncButton',
+				sprintf(
+					'<a class="ss-ui-button ss-ui-action cms-link-ajax" title="%s" href="%s">%s</a>',
+					_t('AssetAdmin.FILESYSTEMSYNCTITLE', 'Update the CMS database entries of files on the filesystem. Useful when new files have been uploaded outside of the CMS, e.g. through FTP.'),
+					$this->Link('doSync'),
+					_t('FILESYSTEMSYNC','Sync files')
+				)
+			);
+		} else {
+			$syncButton = null;
+		}
+		
+		// Move existing fields to a "details" tab, unless they've already been tabbed out through extensions.
+		// Required to keep Folder->getCMSFields() simple and reuseable,
+		// without any dependencies into AssetAdmin (e.g. useful for "add folder" views).
+		if(!$fields->hasTabset()) {
+			$tabs = new TabSet('Root', 
+				$tabList = new Tab('ListView', _t('AssetAdmin.ListView', 'List View')),
+				$tabTree = new Tab('TreeView', _t('AssetAdmin.TreeView', 'Tree View'))
+			);
+			$tabList->addExtraClass("content-listview");
+			$tabTree->addExtraClass("content-treeview");
+			if($fields->Count() && $folder->exists()) {
+				$tabs->push($tabDetails = new Tab('DetailsView', _t('AssetAdmin.DetailsView', 'Details')));
+				$tabDetails->addExtraClass("content-galleryview");
+				foreach($fields as $field) {
+					$fields->removeByName($field->Name());
+					$tabDetails->push($field);
+				}
+			}
+			$fields->push($tabs);
+		}
+
+		// List view
+		$fields->addFieldsToTab('Root.ListView', array(
+			$actionsComposite = Object::create('CompositeField',
+				Object::create('CompositeField',
+					$uploadBtn,
+					$addFolderBtn,
+					$syncButton //TODO: add this into a batch actions menu as in https://github.com/silverstripe/silverstripe-design/raw/master/Design/ss3-ui_files-manager-list-view.jpg
+				)->addExtraClass('cms-actions-row')
+			)->addExtraClass('cms-content-toolbar field'),
+			$gridField
 		));
 		
-		// Makes ajax easier
-		$form->disableSecurityToken();
+		// Tree view
+		$fields->addFieldsToTab('Root.TreeView', array(
+			clone $actionsComposite,
+			// TODO Replace with lazy loading on client to avoid performance hit of rendering potentially unused views
+			new LiteralField(
+				'Tree',
+				FormField::createTag(
+					'div', 
+					array(
+						'class' => 'cms-tree', 
+						'data-url-tree' => $this->Link('getsubtree'), 
+						'data-url-savetreenode' => $this->Link('savetreenode')
+					),
+					$this->SiteTreeAsUL()
+				)
+			)
+		));
+
+		$fields->setForm($form);
+		$form->setTemplate($this->getTemplatesWithSuffix('_EditForm'));
+		// TODO Can't merge $FormAttributes in template at the moment
+		$form->addExtraClass('cms-edit-form cms-panel-padded center ' . $this->BaseCSSClasses());
+		$form->Fields()->findOrMakeTab('Root')->setTemplate('CMSTabSet');
+
+		$this->extend('updateEditForm', $form);
+
+		return $form;
+	}
+
+	public function addfolder($request) {
+		$obj = $this->customise(array(
+			'EditForm' => $this->AddForm()
+		));
+
+		if($this->isAjax()) {
+			// Rendering is handled by template, which will call EditForm() eventually
+			$content = $obj->renderWith($this->getTemplatesWithSuffix('_Content'));
+		} else {
+			$content = $obj->renderWith($this->getViewer('show'));
+		}
+
+		return $content;
+	}
+
+	public function getSearchContext() {
+		$context = singleton('File')->getDefaultSearchContext();
 		
+		// Namespace fields, for easier detection if a search is present
+		foreach($context->getFields() as $field) $field->setName(sprintf('q[%s]', $field->getName()));
+		foreach($context->getFilters() as $filter) $filter->setFullName(sprintf('q[%s]', $filter->getFullName()));
+
+		// Customize fields		
+		$appCategories = array(
+			'image' => _t('AssetAdmin.AppCategoryImage', 'Image'),
+			'audio' => _t('AssetAdmin.AppCategoryAudio', 'Audio'),
+			'mov' => _t('AssetAdmin.AppCategoryVideo', 'Video'),
+			'flash' => _t('AssetAdmin.AppCategoryFlash', 'Flash', PR_MEDIUM, 'The fileformat'),
+			'zip' => _t('AssetAdmin.AppCategoryArchive', 'Archive', PR_MEDIUM, 'A collection of files'),
+		);
+		$context->addField(
+			new DropdownField(
+				'q[AppCategory]',
+				_t('AssetAdmin.Filetype', 'File type'),
+				$appCategories,
+				null,
+				null,
+				' '
+			)
+		);
+		$context->addField(
+			new CheckboxField('q[CurrentFolderOnly]' ,_t('AssetAdmin.CurrentFolderOnly', 'Limit to current folder?'))
+		);
+		$context->getFields()->removeByName('q[Title]');
+
+		return $context;
+	}
+	
+	/**
+	 * Returns a form for filtering of files and assets gridfield.
+	 * Result filtering takes place in {@link getList()}.
+	 *
+	 * @return Form
+	 * @see AssetAdmin.js
+	 */
+	public function SearchForm() {
+		$folder = $this->currentPage();
+		$context = $this->getSearchContext();
+
+		$fields = $context->getSearchFields();
+		$actions = new FieldList(
+			Object::create('ResetFormAction', 'clear', _t('CMSMain_left.ss.CLEAR', 'Clear'))
+				->addExtraClass('ss-ui-action-minor'),
+			FormAction::create('doSearch',  _t('CMSMain_left.ss.SEARCH', 'Search'))
+		);
+		
+		$form = new Form($this, 'filter', $fields, $actions);
+		$form->setFormMethod('GET');
+		$form->setFormAction(Controller::join_links($this->Link('show'), $folder->ID));
+		$form->addExtraClass('cms-search-form');
+		$form->loadDataFrom($this->request->getVars());
+		$form->disableSecurityToken();
+		// This have to match data-name attribute on the gridfield so that the javascript selectors work
+		$form->setAttribute('data-gridfield', 'File');
 		return $form;
 	}
 	
-	/**
-	 * This method processes the results of the UploadForm.
-	 * It will save the uploaded files to /assets/ and create new File objects as required.
-	 */
-	function doUpload($data, $form) {
-		$newFiles = array();
-		$fileIDs = array();
-		$fileNames = array();
-		$fileSizeWarnings = '';
-		$errorsArr = '';
-		$status = '';
-		$statusMessage = '';
-		$processedFiles = array();
-
-		foreach($data['Files'] as $param => $files) {
-			if(!is_array($files)) $files = array($files);
-			foreach($files as $key => $value) {
-				$processedFiles[$key][$param] = $value;
-			}
-		}
-		
-		// Load POST data from arrays in to the correct dohickey.
-		$processedData = array();
-		foreach($data as $dataKey => $value) {
-			if ($dataKey == 'Files') continue;
-			if (is_array($value)) {
-				$i = 0;
-				foreach($value as $fileId => $dataValue) {
-					if (!isset($processedData[$i])) $processedData[$i] = array();
-					$processedData[$i][$dataKey] = $dataValue;
-					$i++;
-				}
-			}
-		}
-		$processedData = array_reverse($processedData);
-				
-		if(isset($data['FolderID']) && is_numeric($data['FolderID'])) {
-			$folder = DataObject::get_by_id("Folder", $data['FolderID']);
-		} else {
-			$folder = singleton('Folder');
-		}
-
-		foreach($processedFiles as $filePostId => $tmpFile) {
-			if($tmpFile['error'] == UPLOAD_ERR_NO_TMP_DIR) {
-				$errorsArr[] = _t('AssetAdmin.NOTEMP', 'There is no temporary folder for uploads. Please set upload_tmp_dir in php.ini.');
-				break;
-			}
-		
-			if($tmpFile['tmp_name']) {
-				
-				// validate files (only if not logged in as admin)
-				if(!File::$apply_restrictions_to_admin && Permission::check('ADMIN')) {
-					$valid = true;
-				} else {
-					
-					// Set up the validator instance with rules
-					$validator = new Upload_Validator();
-					$validator->setAllowedExtensions(File::$allowed_extensions);
-					$validator->setAllowedMaxFileSize(self::$allowed_max_file_size);
-					
-					// Do the upload validation with the rules
-					$upload = new Upload();
-					$upload->setValidator($validator);
-					$valid = $upload->validate($tmpFile);
-					if(!$valid) {
-						$errorsArr = $upload->getErrors();
-					}
-				}
-				
-				// move file to given folder
-				if($valid) {
-					if($newFile = $folder->addUploadToFolder($tmpFile)) {
-						if(self::$metadata_upload_enabled && isset($processedData[$filePostId])) {
-							$fileObject = DataObject::get_by_id('File', $newFile);
-							$metadataForm = new Form($this, 'MetadataForm', $fileObject->uploadMetadataFields(), new FieldList());
-							$metadataForm->loadDataFrom($processedData[$filePostId]);
-							$metadataForm->saveInto($fileObject);
-							$fileObject->write();
-						}
-
-						$newFiles[] = $newFile;
-					}
-				}
-			}
-		}
-
-		if($newFiles) {
-			$numFiles = sizeof($newFiles);
-			$statusMessage = sprintf(_t('AssetAdmin.UPLOADEDX',"Uploaded %s files"),$numFiles);
-			$status = "good";
-		} else if($errorsArr) {
-			$statusMessage = implode('\n', $errorsArr);
-			$status = 'bad';
-		} else {
-			$statusMessage = _t('AssetAdmin.NOTHINGTOUPLOAD','There was nothing to upload');
-			$status = "";
-		}
-
-		$fileObj = false;
-		foreach($newFiles as $newFile) {
-			$fileIDs[] = $newFile;
-			$fileObj = DataObject::get_one('File', "\"File\".\"ID\"=$newFile");
-			// notify file object after uploading
-			if (method_exists($fileObj, 'onAfterUpload')) $fileObj->onAfterUpload();
-			$fileNames[] = $fileObj->Name;
-		}
-		
-		// workaround for content editors image upload.Passing an extra hidden field
-		// in the content editors view of 'UploadMode' @see HtmlEditorField
-		// this will be refactored for 2.5
-		if(isset($data['UploadMode']) && $data['UploadMode'] == "CMSEditor" && $fileObj) {
-			// we can use $fileObj considering that the uploader in the cmseditor can only upload
-			// one file at a time. Once refactored to multiple files this is going to have to be changed
-			$width = (is_a($fileObj, 'Image')) ? $fileObj->getWidth() : '100';
-			$height = (is_a($fileObj, 'Image')) ? $fileObj->getHeight() : '100';
-			
-			$values = array(
-				'Filename' => $fileObj->Filename,
-				'Width' => $width,
-				'Height' => $height
-			);
-			
-			return Convert::raw2json($values);
-		}
-		
-		$sFileIDs = implode(',', $fileIDs);
-		$sFileNames = implode(',', $fileNames);
-
-		// TODO Will be replaced by new upload mechanism, refresh disabled for now
-// 		echo <<<HTML
-// 			<script type="text/javascript">
-// 			var url = parent.document.getElementById('sitetree').getTreeNodeByIdx( "{$folder->ID}" ).getElementsByTagName('a')[0].href;
-// 			parent.jQuery('.cms-edit-form').entwine('ss').loadForm(url);
-// 			parent.statusMessage("{$statusMessage}","{$status}");
-// 			</script>
-// HTML;
-	}
-	
-	function AddForm() {
-		$form = parent::AddForm();
-		$form->Actions()->fieldByName('action_doAdd')->setTitle(_t('AssetAdmin.ActionAdd', 'Add folder'));
+	public function AddForm() {
+		$folder = singleton('Folder');
+		$form = new Form(
+			$this,
+			'AddForm',
+			new FieldList(
+				new TextField("Name", _t('File.Name')),
+				new HiddenField('ParentID', false, $this->request->getVar('ParentID'))
+			),
+			new FieldList(
+				FormAction::create('doAdd', _t('AssetAdmin_left.ss.GO','Go'))
+					->addExtraClass('ss-ui-action-constructive')->setAttribute('data-icon', 'accept')
+					->setTitle(_t('AssetAdmin.ActionAdd', 'Add folder'))
+			)
+		);
+		$form->setTemplate($this->getTemplatesWithSuffix('_EditForm'));
+		// TODO Can't merge $FormAttributes in template at the moment
+		$form->addExtraClass('add-form cms-add-form cms-edit-form cms-panel-padded center ' . $this->BaseCSSClasses());
 		
 		return $form;
 	}
@@ -327,20 +365,23 @@ JS
 			singleton($class)->hasExtension('Hierarchy') 
 			&& isset($data['ParentID'])
 			&& is_numeric($data['ParentID'])
+			&& $data['ParentID']
 		) {
 			$parentRecord = DataObject::get_by_id($class, $data['ParentID']);
 			if(
 				$parentRecord->hasMethod('canAddChildren') 
 				&& !$parentRecord->canAddChildren()
 			) return Security::permissionFailure($this);
+		} else {
+			$parentRecord = null;
 		}
-		
+
 		$parent = (isset($data['ParentID']) && is_numeric($data['ParentID'])) ? (int)$data['ParentID'] : 0;
 		$name = (isset($data['Name'])) ? basename($data['Name']) : _t('AssetAdmin.NEWFOLDER',"NewFolder");
-		if(!isset($parentRecord) || !$parentRecord->ID) $parent = 0;
+		if(!$parentRecord || !$parentRecord->ID) $parent = 0;
 		
 		// Get the folder to be created		
-		if(isset($parentRecord->ID)) $filename = $parentRecord->FullPath . $name;
+		if($parentRecord && $parentRecord->ID) $filename = $parentRecord->FullPath . $name;
 		else $filename = ASSETS_PATH . '/' . $name;
 
 		// Actually create
@@ -350,7 +391,8 @@ JS
 		
 		$record = new Folder();
 		$record->ParentID = $parent;
-		
+		$record->Name = $record->Title = basename($filename);
+
 		// Ensure uniqueness		
 		$i = 2;
 		$baseFilename = substr($record->Filename, 0, -1) . '-';
@@ -365,15 +407,7 @@ JS
 		mkdir($record->FullPath);
 		chmod($record->FullPath, Filesystem::$file_create_mask);
 
-		// Used in TinyMCE inline folder creation
-		if(isset($data['returnID'])) {
-			return $record->ID;
-		} else if($this->isAjax()) {
-			$form = $this->getEditForm($record->ID);
-			return $form->forTemplate();
-		} else {
-			return $this->redirect(Controller::join_links($this->Link('show'), $record->ID));
-		}
+		return $this->redirect(Controller::join_links($this->Link('show'), $parentRecord->ID));
 	}
 
 	/**
@@ -381,10 +415,10 @@ JS
 	 */
 	public function currentPage() {
 		$id = $this->currentPageID();
-		if($id && is_numeric($id)) {
-			return DataObject::get_by_id('File', $id);
-		} else if($id == 'root') {
-			return singleton('File');
+		if($id && is_numeric($id) && $id > 0) {
+			return DataObject::get_by_id('Folder', $id);
+		} else {
+			return singleton('Folder');
 		}
 	}
 	
@@ -404,27 +438,15 @@ JS
 	//------------------------------------------------------------------------------------------//
 
 	// Data saving handlers
+
 	/**
-	 * @return Form
+	 * Can be queried with an ajax request to trigger the filesystem sync. It returns a FormResponse status message
+	 * to display in the CMS
 	 */
-	function SyncForm() {
-		$form = new Form(
-			$this,
-			'SyncForm',
-			new FieldList(
-			),
-			new FieldList(
-				$btn = new FormAction('doSync', _t('FILESYSTEMSYNC','Look for new files'))
-			)
-		);
-		$form->setFormMethod('GET');
-		$btn->describe(_t('AssetAdmin_left.ss.FILESYSTEMSYNC_DESC', 'SilverStripe maintains its own database of the files &amp; images stored in your assets/ folder.  Click this button to update that database, if files are added to the assets/ folder from outside SilverStripe, for example, if you have uploaded files via FTP.'));
-		
-		return $form;
-	}
-	
-	function doSync($data, $form) {
-		return Filesystem::sync();
+	public function doSync() {
+		$message = Filesystem::sync();
+		$this->response->addHeader('X-Status', $message);
+		return;
 	}
 	
 	/**
@@ -452,8 +474,8 @@ JS
 		}
 		
 		$message = sprintf(_t('AssetAdmin.THUMBSDELETED', '%s unused thumbnails have been deleted'), $count);
-		FormResponse::status_message($message, 'good');
-		echo FormResponse::respond();
+		$this->response->addHeader('X-Status', $message);
+		return;
 	}
 	
 	/**
@@ -518,6 +540,46 @@ JS
 		
 		return array_diff($allThumbnails, $usedThumbnails);
 	}
+
+	/**
+	 * @return ArrayList
+	 */
+	public function Breadcrumbs($unlinked = false) {
+		$items = parent::Breadcrumbs($unlinked);
+
+		// The root element should explicitly point to the root node.
+		// Uses session state for current record otherwise.
+		$items[0]->Link = Controller::join_links(singleton('AssetAdmin')->Link('show'), 0);
+
+		// If a search is in progress, don't show the path
+		if($this->request->requestVar('q')) {
+			$items = $items->limit(1);
+			$items->push(new ArrayData(array(
+				'Title' => _t('LeftAndMain.SearchResults', 'Search Results'),
+				'Link' => Controller::join_links($this->Link(), '?' . http_build_query(array('q' => $this->request->requestVar('q'))))
+			)));
+		}
+
+		// If we're adding a folder, note that in breadcrumbs as well
+		if($this->request->param('Action') == 'addfolder') {
+			$items->push(new ArrayData(array(
+				'Title' => _t('Folder.AddFolderButton', 'Add folder'),
+				'Link' => false
+			)));
+		}
+
+		return $items;
+	}
+
+	function providePermissions() {
+		$title = _t("AssetAdmin.MENUTITLE", LeftAndMain::menu_title_for_class($this->class));
+		return array(
+			"CMS_ACCESS_AssetAdmin" => array(
+				'name' => sprintf(_t('CMSMain.ACCESS', "Access to '%s' section"), $title),
+				'category' => _t('Permission.CMS_ACCESS_CATEGORY', 'CMS Access')
+			)
+		);
+	}
 	
 }
 /**
@@ -528,12 +590,12 @@ JS
  * @subpackage batchactions
  */
 class AssetAdmin_DeleteBatchAction extends CMSBatchAction {
-	function getActionTitle() {
+	public function getActionTitle() {
 		// _t('AssetAdmin_left.ss.SELECTTODEL','Select the folders that you want to delete and then click the button below')
 		return _t('AssetAdmin_DeleteBatchAction.TITLE', 'Delete folders');
 	}
 
-	function run(SS_List $records) {
+	public function run(SS_List $records) {
 		$status = array(
 			'modified'=>array(),
 			'deleted'=>array()
@@ -554,4 +616,4 @@ class AssetAdmin_DeleteBatchAction extends CMSBatchAction {
 		return Convert::raw2json($status);
 	}
 }
-?>
+

@@ -19,7 +19,6 @@ ini_set('mysql.connect_timeout', 5);
 
 ini_set('max_execution_time', 0);
 error_reporting(E_ALL ^ E_NOTICE);
-session_start();
 
 // Include environment files
 $usingEnv = false;
@@ -43,6 +42,7 @@ if($envFileExists) {
 }
 
 include_once('sapphire/core/Object.php');
+include_once('sapphire/view/TemplateGlobalProvider.php');
 include_once('sapphire/i18n/i18n.php');
 include_once('sapphire/dev/install/DatabaseConfigurationHelper.php');
 include_once('sapphire/dev/install/DatabaseAdapterRegistry.php');
@@ -160,6 +160,12 @@ if($req->isIIS()) {
 
 if($req->hasErrors()) {
 	$hasErrorOtherThanDatabase = true;
+	if ( function_exists('php_ini_loaded_file')) {
+		// show the location of the php.ini if any issues exist
+		$phpIniLocation = php_ini_loaded_file();
+	} else {
+		$phpIniLocation = null;
+	}
 }
 
 if($databaseConfig) {
@@ -398,6 +404,7 @@ class InstallRequirements {
 
 		$this->suggestPHPSetting('asp_tags', array(''), array('PHP Configuration', 'asp_tags option turned off', 'This should be turned off as it can cause issues with SilverStripe'));
 		$this->suggestPHPSetting('magic_quotes_gpc', array(''), array('PHP Configuration', 'magic_quotes_gpc option turned off', 'This should be turned off, as it can cause issues with cookies. More specifically, unserializing data stored in cookies.'));
+		$this->suggestPHPSetting('display_errors', array(''), array('PHP Configuration', 'display_errors option turned off', 'Unless you\'re in a development environment, this should be turned off, as it can expose sensitive data to website users.'));
 
 		// Check memory allocation
 		$this->requireMemory(32*1024*1024, 64*1024*1024, array("PHP Configuration", "Memory allocated (PHP config option 'memory_limit')", "SilverStripe needs a minimum of 32M allocated to PHP, but recommends 64M.", ini_get("memory_limit")));
@@ -662,7 +669,9 @@ class InstallRequirements {
 	}
 
 	function getTempFolder() {
-		if(file_exists($this->getBaseDir() . 'silverstripe-cache')) {
+		if (defined('TEMP_FOLDER')) {
+			$sysTmp = TEMP_FOLDER;
+		} elseif(file_exists($this->getBaseDir() . 'silverstripe-cache')) {
 			$sysTmp = $this->getBaseDir();
 		} elseif(function_exists('sys_get_temp_dir')) {
 			$sysTmp = sys_get_temp_dir();
@@ -1037,14 +1046,14 @@ require_once('conf/ConfigureFromEnv.php');
 
 MySQLDatabase::set_connection_charset('utf8');
 
-// This line set's the current theme. More themes can be
-// downloaded from http://www.silverstripe.org/themes/
+// Set the current theme. More themes can be downloaded from
+// http://www.silverstripe.org/themes/
 SSViewer::set_theme('$theme');
 
 // Set the site locale
 i18n::set_locale('$locale');
 
-// enable nested URLs for this site (e.g. page/sub-page/)
+// Enable nested URLs for this site (e.g. page/sub-page/)
 if (class_exists('SiteTree')) SiteTree::enable_nested_urls();
 PHP
 			);
@@ -1070,14 +1079,14 @@ global \$databaseConfig;
 
 MySQLDatabase::set_connection_charset('utf8');
 
-// This line set's the current theme. More themes can be
-// downloaded from http://www.silverstripe.org/themes/
+// Set the current theme. More themes can be downloaded from
+// http://www.silverstripe.org/themes/
 SSViewer::set_theme('$theme');
 
 // Set the site locale
 i18n::set_locale('$locale');
 
-// enable nested URLs for this site (e.g. page/sub-page/)
+// Enable nested URLs for this site (e.g. page/sub-page/)
 if (class_exists('SiteTree')) SiteTree::enable_nested_urls();
 PHP
 			);
