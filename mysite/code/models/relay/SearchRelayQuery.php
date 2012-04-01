@@ -94,7 +94,7 @@ class SearchRelayQuery extends RelayQuery {
 		$param['lang'] = 'en';
 		if ($this->location) {
 			$loc=false;
-			$airport = DataObject::get_one('Location', '`code3`="' . $this->location . '"' ) ;
+			$airport = DataObject::get_one('Location', '"code3"=\'' . $this->location . "'" ) ;
 			if ($airport ) $loc = $airport->forSearch();
 			if ($loc) $param['geocode']=$loc;
 		} 
@@ -110,7 +110,6 @@ class SearchRelayQuery extends RelayQuery {
 	 */
 	function requestString() {
 		$rv = 'http://search.twitter.com/search';
-		 $rv= 'http://128.121.146.235/search';
 		return $rv;
 	}
 
@@ -139,7 +138,7 @@ class SearchRelayQuery extends RelayQuery {
 		$new_user = new stdClass;
 		$new_status = new stdClass;
 		if($enter_user) { 
-			$t = DataObject::get_one('TweetUser',"`screen_name`='" . Convert::raw2sql($status->from_user) ."'");
+			$t = DataObject::get_one('TweetUser','"screen_name"=\'' . Convert::raw2sql($status->from_user) ."'");
 		}
 		$new_user -> profile_image_url = $status -> profile_image_url;
 		$new_user -> screen_name = $status ->from_user;

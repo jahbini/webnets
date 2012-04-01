@@ -1,16 +1,16 @@
 <?php
 /* vi:sts=3:sw=3:ts=3:filetype=php:
  */
-class MentorNames extends ModelAdmin {
-   
-  public static $managed_models = array(
-      'Mentor'
-   );
- 
-  static $url_segment = 'Mentors'; // will be linked as /admin/products
-  static $menu_title = 'edit Mentors';
- 
-}
+//class MentorNames extends ModelAdmin {
+//   
+//  public static $managed_models = array(
+//      'Mentor'
+//   );
+// 
+//  static $url_segment = 'Mentors'; // will be linked as /admin/products
+//  static $menu_title = 'edit Mentors';
+// 
+//}
 
 class Mentor extends UsersPenName {
 	// a birds of a feather collector
@@ -49,107 +49,50 @@ class Mentor extends UsersPenName {
 	static $required=false;
 
 	function requireDefaultRecords() {
+		error_log("Require Mentor Records");
 		if(self::$required ) return;
 		self::$required=true;	
 
 	$mentorDef = array (
-		'Moms_tweeparty' => array ('Salutation' => 'socialite', 'Location' => 'en','Interaction' => true
-			,'modes' => <<<JSON
-[
-{ClassName:"Mode", Use:"Attract",ProfileID: #PID#, Panes:
- [{RefName: "Notables" ,ClassName: "Pane", userKey: "Notables", width: 3, 
-	Queries: {ClassName: "FriendsRelayQuery",query:"Arleen", authority:"query", Title: "Friends of Arleen" }},
-    {ClassName: "Pane", userKey: "Quotables", width: 4,
-	Queries: {ClassName: "FriendsRelayQuery",query:"#mentor#",authority:"mentor", Title: "Friends of #mentor#" }},
-    {RefName: "VIP", ClassName: "Pane", userKey: "VIPs", width: 5,
-	Queries: {RefName:"beelzebub_friends",ClassName: "FriendsRelayQuery", query: "be_elzebub", authority:"query",  Title: "Friends of Be_elzebub" }}]
-       	},
-{ClassName:"Mode", Use:"mentored",ProfileID: #PID#, Panes:
-	 [{RefName: "Friends-mentee", ClassName: "Pane", userKey: "Friends of #mentee#", width: 2, 
-	Queries: [ {ClassName: "FriendsRelayQuery",query:"#mentee#", authority:"mentee", Title: "Friends of #mentee#" },
-		   {ClassName: "FollowersRelayQuery",query:"#mentee#", authority:"mentee", Title: "Followers of #mentee#" }]},
-    {ClassName: "Pane", userKey: "Supporters of WeAllTwee", width: 4,
-	Queries: [{ClassName: "FriendsRelayQuery",query:"#SN#", Title: "Friends of #SN#" },
-		{ClassName: "UserRelayQuery",authority:"mentor", Title: "messages from #SN#" }
-]},
-    {ClassName: "Pane", userKey: "Your messages", width: 5,
-	Queries: [
-		   {ClassName: "FollowersRelayQuery",query:"#mentee#", authority:"mentee", Title: "Followers of #mentee#" }]}
-
-]}
- 
-]
-JSON
-		) ,
-
-			'governot' => array ('Salutation' => 'anarchist' , 'Location' => 'en', 'Interaction' => true
-			,'modes' => <<<JSON
-[
-{ClassName:"Mode", Use: "Attract", ProfileID: #PID#, Panes:
-[
- { ClassName: "Pane", userKey: "Politicos and Pundits", width: 5,
-Queries: {ClassName: "FriendsRelayQuery", query:"governot", authority:"query", Title: "Friends of governot" } 
-},
- { ClassName: "Pane", userKey: "The word on the stweet", width: 5,
-Queries: {ClassName: "SearchRelayQuery",Mobi:false, Title: "economy", keywords: "unemployment,repossess,foreclose,bank failure", location:"" },
-	{ClassName: "SearchRelayQuery",Mobi:false, Title: "bogus", keywords: "palin,limbaugh,nazi,olbermann,huffington", location:"" },
-}
-
-]
-}
-]
-JSON
-	),
-	'hotinhnl' => array( 'Salutation' => 'kamaaina', 'Location'=>'hnl,honolulu,oahu','Interaction' => true
+	'ModernMarianas' => array( 'Salutation' => 'Hafa Adai', 'Location'=>'Saipan,Tinian,Rota','Interaction' => true
 		,'modes' => <<<JSON
 [
 
 {ClassName:"Mode", Use:"Attract",ProfileID: #PID#, Panes:[
-	{ClassName: "Pane", userKey: "Places", width: 4, 
+	{ClassName: "Pane", userKey: "Places", width: 3, 
 		Queries: [
-		{ClassName: "SearchRelayQuery",Mobi:true, Title: "Downtown Honolulu Places", keywords: "aloha tower,ala moana,bishop square,first friday", location:"hnl" },
-		{ClassName: "SearchRelayQuery",Mobi:true, Title: "Waikiki Places", keywords: "waikiki",negativeWords:"BA,london", location:"hnl" },
-		{ClassName: "SearchRelayQuery",Mobi:true, Title: "OutOfTown", keywords:"kaneohe,hawaii kai,haleiwa,ewa",negativeWords:"BA,london", location:"hnl" }
-	]},
-    {ClassName: "Pane", userKey: "Hot Spots", width: 4,
-    	Queries: [
-		{ClassName: "SearchRelayQuery",Mobi:true, Title: "watering holes", keywords: "bar35,pipeline cafe,the loft,39 hotel", location:"hnl" },
-		{ClassName: "SearchRelayQuery",Mobi:true, Title: "restaraunts", keywords: "luau,indigos,great food,best food", location:"hnl" }
-	]},
-    {ClassName: "Pane", userKey: "VIPs", width: 5,
-    	Queries: [
-		{ClassName: "SearchRelayQuery",Mobi:true, Title: "parks", keywords: "botanical,kapiolani park,alamoana park,ala moana park", location:"hnl" },
-		{ClassName: "SearchRelayQuery",Mobi:true, Title: "surf", keywords: "sunset beach,waikiki beach,queens beach,waimea falls,turtle bay,makaha beach", location:"hnl" }
+		{ClassName: "SearchRelayQuery",Mobi:true, Title: "CNMI Buzz", keywords: "Saipan,Rota,Tinian,Article12", location:"spn" },
+		{ClassName: "FriendsRelayQuery",query:"#mentor#",authority:"mentor", Title: "Friends of #mentor#"},
+		{ClassName: "SearchRelayQuery",Mobi:true, Title: "Saipan Places", keywords: "laulau,laulau beach",negativeWords:"BA,london", location:"spn" },
+		{ClassName: "SearchRelayQuery",Mobi:true, Title: "OutOfTown", keywords:"San Vicente",negativeWords:"BA,london", location:"spn" }
 	]}
 	]},
 
 {ClassName:"Mode", Use:"mentored",ProfileID: #PID#, Panes:[
 	{ClassName: "Pane", userKey: "Places", width: 3, 
 		Queries: [
-		{ClassName: "SearchRelayQuery",Mobi:true, Title: "Downtown Honolulu Places", keywords: "aloha tower,ala moana,bishop square,first friday", location:"hnl" },
-		{ClassName: "SearchRelayQuery",Mobi:true, Title: "Waikiki Places", keywords: "waikiki",negativeWords:"BA,london", location:"hnl" },
-		{ClassName: "SearchRelayQuery",Mobi:true, Title: "OutOfTown", keywords:"kaneohe,hawaii kai,haleiwa,ewa",negativeWords:"BA,london", location:"hnl" }
-	]},
-    {ClassName: "Pane", userKey: "Hot Spots", width: 4,
-    	Queries: [
-		{ClassName: "SearchRelayQuery",Mobi:true, Title: "watering holes", keywords: "bar35,pipeline cafe,the loft,39 hotel", location:"hnl" },
-		{ClassName: "SearchRelayQuery",Mobi:true, Title: "restaraunts", keywords: "luau,indigos,great food,best food", location:"hnl" }
-	]},
-    {RefName: "Your-mentee", ClassName: "Pane", userKey: "messages of #mentee#", width: 3,
-	Queries: [{RefName:"beelzebub_friends",Mobi:true,ClassName: "FriendsRelayQuery", query: "be_elzebub",  Title: "Friends of Be_elzebub" },
-		   {ClassName: "FollowersRelayQuery",query:"#mentee#", authority:"mentee", Title: "Followers of #mentee#" }]},
-    {RefName: "Parks", ClassName: "Pane", userKey: "Parks & Surf", width: 3,
-    	Queries: [
-		{ClassName: "SearchRelayQuery", Title: "parks", keywords: "botanical,kapiolani park,alamoana park,ala moana park", location:"hnl" },
-		{ClassName: "SearchRelayQuery", Title: "surf", keywords: "sunset beach,waikiki beach,queens beach,waimea falls,turtle bay,makaha beach", location:"hnl" }
+		{ClassName: "SearchRelayQuery",Mobi:true, Title: "CNMI Buzz", keywords: "Saipan,Rota,Tinian,Article12", location:"spn" },
+		{ClassName: "SearchRelayQuery",Mobi:true, Title: "Saipan Places", keywords: "laulau,laulau beach",negativeWords:"BA,london", location:"spn" },
+		{ClassName: "SearchRelayQuery",Mobi:true, Title: "OutOfTown", keywords:"San Vicente",negativeWords:"BA,london", location:"spn" }
 	]}
-]
-	}
+] }
 
 
 ]
 JSON
-	) ,
+	) 
+		/* example 
+		 * {RefName: "Notables" ,ClassName: "Pane", userKey: "Notables", width: 3, 
+		 * -       Queries: {ClassName: "FriendsRelayQuery",query:"Arleen", authority:"query", Title: "Friends of Arleen" }},
+		 * -    {ClassName: "Pane", userKey: "Quotables", width: 4,
+		 * -       Queries: {
+		 * ClassName: "FriendsRelayQuery",query:"#mentor#",authority:"mentor", Title: "Friends of #mentor#"
+		 * }},
+		 * -    {RefName: "VIP", ClassName: "Pane", userKey: "VIPs", width: 5,
+		 * -       Queries: {RefName:"beelzebub_friends",ClassName: "FriendsRelayQuery", query: "be_elzebub", authority:"query",  Title: "Friends of Be_elzebub" }}]
+		 * -               },
+		,
+
 	'hotinsfo' => array( 'Salutation' => 'friend', 'Location'=>'sfo,sanfrancisco,frisco','Interaction' => false
 		,'modes' => <<<JSON
 {ClassName:"Mode", Use:"Attract",ProfileID: #PID#, Panes:
@@ -170,18 +113,7 @@ JSON
        	}
 JSON
        	) ,
-	'hotindfw' => array( 'Salutation' => 'partner', 'Location'=>'dfw,dallas,fortworth','Interaction' => true
-		,'modes' => <<<JSON
-{ClassName:"Mode", Use:"Attract",ProfileID: #PID#, Panes:
-   [{RefName: "Notables" ,ClassName: "Pane", userKey: "Notables", width: 3, 
-	Queries: {ClassName: "FriendsRelayQuery",query:"Arleen", Title: "Friends of Arleen" }},
-    {ClassName: "Pane", userKey: "Quotables", width: 4,
-    	Queries: {ClassName: "FriendsRelayQuery",query:"#SN#", Title: "Friends of #SN#" }},
-    {RefName: "VIP", ClassName: "Pane", userKey: "VIPs", width: 5,
-	Queries: {RefName:"beelzebub_friends",ClassName: "FriendsRelayQuery", query: "be_elzebub",  Title: "Friends of Be_elzebub" }}]
-       	}
-JSON
-       	) ,
+		 */
 	);
 
 
@@ -199,8 +131,10 @@ JSON
 		}
 		 */
 		foreach ($mentorDef as $name => $values) {
+			error_log("creating records for $name");
 			$b = TweetUser::getTweetUser($name);
-			if($b instanceOf Mentor) continue;  //been here done that
+			if($b instanceOf Mentor &&  !($name=='ModernMarianas') ) continue;  //been here done that
+			error_log("Continuing to create records for $name");
 
 			$be= $b->newClassInstance('Mentor');
 			$b ->destroy();

@@ -11,16 +11,16 @@ class UsersPenNameMaintenance {
 	}
 }
 
-class UserPenAdmin extends ModelAdmin {
-   
-  public static $managed_models = array(
-      'UserPenName'
-   );
- 
-  static $url_segment = 'upen'; // will be linked as /admin/products
-  static $menu_title = 'edit UsersPenName';
- 
-}
+//class UserPenAdmin extends ModelAdmin {
+//   
+//  public static $managed_models = array(
+//      'UserPenName'
+//   );
+// 
+//  static $url_segment = 'upen'; // will be linked as /admin/products
+//  static $menu_title = 'edit UsersPenName';
+// 
+//}
 
 
 class UsersPenName extends PenName {

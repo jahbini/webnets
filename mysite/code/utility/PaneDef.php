@@ -118,7 +118,7 @@ class PaneDef {
 			$jj = new Services_JSON( SERVICES_JSON_LOOSE_TYPE);
 			$j = $jj->decode($j);
 		}
-		Debug::show($j);
+
 		if (isset($j['RefName']) && isset(PaneDef::$RefBack[$j['RefName']] )  )  {
 			if($attach) $attach->add(PaneDef::$RefBack[$j['RefName'] ] );
 			return PaneDef::$RefBack[$j['RefName'] ];
@@ -130,12 +130,16 @@ class PaneDef {
 			return $rvalue;
 		}
 		if (!isset($j['ClassName']) ) {
+			Debug::show("error, no ClassName in Json definition");
 			Debug::show($j);
 			die();
 		}
 		$c = $j['ClassName'];
 		$newObject = new $c();
 		$newObject -> write();
+		if($need_mobi= $j['Mobi'] ) {
+			unset ($j['Mobi']);
+		}
 		foreach ($j as $key => $val ) {
 			// if the spec is a simple type, just attach it to the current object
 			if(! is_array($val) ) $newObject -> {$key } = $val;
@@ -154,6 +158,7 @@ class PaneDef {
 				 //$has_some->write(true);
 			}
 		}
+		if($need_mobi) $newObject -> Mobi = $need_mobi;
 	$newObject->write();
 	if (isset($j['RefName'])) {
 		PaneDef::$RefBack[$j['RefName'] ] = $newObject;

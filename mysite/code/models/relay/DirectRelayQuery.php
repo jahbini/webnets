@@ -26,8 +26,8 @@ class DirectRelayQuery extends RelayQuery {
 
 		$user = $status->sender;
 		if($enter_user) { 
-			$new_sender = DataObject::get_one('TweetUser',"`twitter_id`='" . Convert::raw2sql($user->id) ."'");
-			if (!$new_sender) $new_sender = DataObject::get_one('TweetUser',"`screen_name`='" . Convert::raw2sql($user->screen_name) ."'");
+			$new_sender = DataObject::get_one('TweetUser','"twitter_id"=\'' . Convert::raw2sql($user->id) ."'");
+			if (!$new_sender) $new_sender = DataObject::get_one('TweetUser','"screen_name"=\'' . Convert::raw2sql($user->screen_name) ."'");
 			if (!$new_sender) {
 				$new_sender = new TweetUser();
 				$new_sender ->write();
@@ -57,8 +57,8 @@ class DirectRelayQuery extends RelayQuery {
 
 		$user = $status->recipient;
 		if($enter_user) { 
-			$new_recipient = DataObject::get_one('TweetUser',"`twitter_id`='" . Convert::raw2sql($user->id) ."'");
-			if (!$new_recipient) $new_recipient = DataObject::get_one('TweetUser',"`screen_name`='" . Convert::raw2sql($user->screen_name) ."'");
+			$new_recipient = DataObject::get_one('TweetUser','"twitter_id"=\'' . Convert::raw2sql($user->id) ."'");
+			if (!$new_recipient) $new_recipient = DataObject::get_one('TweetUser','"screen_name"=\'' . Convert::raw2sql($user->screen_name) ."'");
 			if (!$new_recipient) {
 				$new_recipient = new TweetUser();
 				$new_recipient ->write();

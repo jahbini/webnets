@@ -1,23 +1,35 @@
 <?php
 
-
 global $project;
-$project = 'tell140';
+$project = 'mysite';
+
+global $databaseConfig;
+$databaseConfig = array(
+	"type" => 'MySQLDatabase',
+	"server" => '127.0.0.1:3306',
+	"username" => 'jahbini',
+	"password" => 'G3tTh1n',
+	"database" => 'webnets',
+	"path" => '',
+);
+
+MySQLDatabase::set_connection_charset('utf8');
+
+// Set the current theme. More themes can be downloaded from
+// http://www.silverstripe.org/themes/
+SSViewer::set_theme('blackcandy');
+
+// Set the site locale
+i18n::set_locale('en_US');
+
+// Enable nested URLs for this site (e.g. page/sub-page/)
+if (class_exists('SiteTree')) SiteTree::enable_nested_urls();
+
 global $Geo; $Geo = 'North America';
 global $GeoShort; $GeoShort = 'en';
 global $databaseConfig;
 global $consumer_key;
 global $consumer_secret;
-
-// Sites running on the following servers will be
-// run in development mode. See
-// http://doc.silverstripe.com/doku.php?id=devmode
-// for a description of what dev mode does.
-Director::set_dev_servers(array(
-	'webnets',
-	'127.0.0.1',
-));
-
 	
   if ( array_key_exists('HTTP_HOST', $_SERVER)) {
 	  $names = explode ('.', strtolower($_SERVER['HTTP_HOST'] ));
@@ -33,102 +45,16 @@ Director::set_dev_servers(array(
 
   global $MentorLocation;
   $MentorLocation = 'en';
-  global $MentorName;
-  $MentorName = '';
+  global $WantedSubdomain;
 
-global $wantedSubDomain;
-  $wantedSubDomain = array_shift($names);
-  if (strcasecmp($wantedSubDomain,"www") == 0) $wantedSubDomain = array_shift($names);
-if (!$wantedSubDomain) $wantedSubDomain= 'generic';
-switch ($wantedSubDomain) {
-case 'webnets': break;
-default: $wantedSubDomain = 'generic';
+global $WantedSubdomain;
+  $WantedSubdomain = array_shift($names);
+  if (strcasecmp($WantedSubdomain,"www") == 0) $WantedSubdomain = array_shift($names);
+if (!$WantedSubdomain) $WantedSubdomain= 'all';
+switch ($WantedSubdomain) {
+default: $WantedSubDomain = 'all';
 }
 
-//echo("local group is $localGroup");
-//die();
-/*
-  $prefix = array_shift($names);
-  if (strcasecmp($prefix,"www") == 0) $prefix = array_shift($names);
-  if($prefix == "powerstation") $prefix = '';
-  if ($prefix){
-	  switch($prefix) {
-	  case "sfo":
-	  	$tweeparty_profile = 'hotinsfo';
-		$sponsor = 'hotinsfo';
-		$GeoShort = "SFO";
-		$Geo="San Francisco";
-		  $MentorLocation = 'sfo';
-		break;
-	  case "hnl":
-	  case "honolulu":
-		$tweeparty_profile = 'hotinhnl';
-		$sponsor = 'hotinhnl';
-		$GeoShort = "HNL";
-		$Geo='Honolulu';
-		  $MentorLocation = 'hnl';
-		break;
-	case "governot":
-		$tweeparty_profile = 'governot';
-		$sponsor = 'governot';
-		$MentorName = 'governot';
-		break;
-	  default: 
-	  if ($comMobi == "mobi") {
-		$tweeparty_profile = 'hotinhnl';
-		  $MentorLocation = 'hnl';
-		$sponsor = 'hotinhnl';
-		$Geo='Honolulu';
-	  }
-	  else {
-		  $tweeparty_profile = 'socialite';
-	  }
-	  }
-  }
- */
-if (getenv('DREAMHOST') ) {
-if(Director::isLive()) {
-	Debug::send_errors_to("error@kegare.org",true);
-	$consumer_key = "TqRy6dnFvGJaPa4OeBljQ"; // tweeparty
-	$consumer_secret = 'bsSXEmLox4woNCGwT3uPQixyidh5NC0rSU0joZb62E';
-
-	$consumer_key = "bfOttpET0m7Zf3Oxeg4bQ"; // we all twee
-	$consumer_secret = 'eJYR3VZbRWb1kTrfFgMSGsg1L3rJ9n0CI3DRrSTAE';
-	$databaseConfig = array(
-		"type" => "MySQLDatabase",
-		"server" => "mysql.411-source.com", 
-		"username" => "jahbini", 
-		"password" => "1amwhat1am", 
-		"database" => "wealltwee"
-	);
-	} else {
-	$consumer_key = 	"HEYLLGiET8IrJZli7hoFwA";
-	$consumer_secret = "kKbd2OZjdbD4A3Q5f2FBELxPSOWD5X4EKic9mRQfEk";
-	// really do not want two databases, but oAuth application keys cause user tokens to fail
-	$databaseConfig = array(
-		"type" => "MySQLDatabase",
-		"server" => "mysql.411-source.com", 
-		"username" => "jahbini", 
-		"password" => "1amwhat1am", 
-		"database" => "tweeparty_test"
-	);
-       	}
-
-
-} else {
-Security::setDefaultAdmin('jahbini','password');
-/* use powerstation credentials */
-	$consumer_key = 	"HEYLLGiET8IrJZli7hoFwA";
-	$consumer_secret = "kKbd2OZjdbD4A3Q5f2FBELxPSOWD5X4EKic9mRQfEk";
-
-$databaseConfig = array(
-	"type" => "MySQLDatabase",
-	"server" => "p:127.0.0.1:3306", 
-	"username" => "jahbini", 
-	"password" => "G3tTh1n", 
-	"database" => "webnets"
-);
-}
 /* use tell140 credentials */
 	$consumer_key = 	"uCTUCMz2s5K4fxqzTThiQ";
 	$consumer_secret = "nvrbum4ruYGX3irYq42TGy4rbY2vN0uetaaOwykF0Ls";
@@ -155,6 +81,7 @@ Director::addRules(60,array( 'DoToDoItem//$action' => 'DoToDoItem' ) );
 //require_once("../../sapphire/core/model/DB.php");
 
 
+
 function &_v($parent,$index,$kind = "stdClass",$fail=true){
 	if ( isset($parent->{$index} ) && is_object($t =& $parent->{$index} ) && is_a($t,$kind) ) return $t;
 	if($fail) { 
@@ -165,9 +92,9 @@ function &_v($parent,$index,$kind = "stdClass",$fail=true){
 	// we return false if the caller wants to suppress the error
 	return $fail;
 }
+
 $_GET['isDev']=1;
 
 Security::setDefaultAdmin('jahbini','password');
 function _e($msg) {user_error($msg,E_USER_ERROR);}
 function _w($msg) {user_error($msg,E_USER_WARNING);}
-?>

@@ -127,11 +127,13 @@ class PseudoRelayQuery  {
 	}
 };
 
+global $WantedSubdomain;
 class GraphPage_Controller extends Page_Controller {
 	var $profile = false;
 	var $alsoP = false;
    function init() {
       parent::init();
+      $this -> mentor = DataObject::get_one('SubDomain',$WantedSubdomain)->Organizer();
       if( $this->not_ajax ) {
 	      //Requirements::javascript('tell140/javascript/tools.tooltip-1.0.2.js');
 	      Requirements::javascript('tell140/javascript/hoverIntent.min.js');
@@ -162,14 +164,14 @@ function Queries () {
 	  }	
 //Debug::show($p);
 	if (! $p->exists() ){
-	 $p = $this->mentor -> Profile() -> getModeByUse('mentored') -> Panes("","`userKey` ASC");
+	 $p = $this->mentor -> Profile() -> getModeByUse('mentored') -> Panes("",'"userKey" ASC');
 	//	return "<h1> Please visit your Profile Page and design your Queries Display</h1>".$this->downlinePix() . $this->uplinePix() . $this->publicPix();
 
 	}
 	$count=1;
 	$result ='';
 	foreach ($p as $pane ) {
-		//error_log("Got a pane ID =" . $pane -> ID );
+		error_log("Got a pane ID =" . $pane -> ID );
 		$payloads = array();
 		//$v = $pane->Queries();
 		 $queries= $pane->Queries();

@@ -94,6 +94,7 @@ class RelayQuery extends TwitterQuery {
 		$range->reschedule = $this->nurse->preSchedule();
 		if($range->reschedule > 30 ) return $range;
 		$q= $this->requestString();
+		$this->debug =1;
 		if($this->debug) error_log("grabbing tweets for query " . $q . ' Type= '. $this->ClassName);
 		$this->forcePenName();
 		$range = $this->fillTweets($param,$this->requestString(), $this->Authenticate() );
@@ -260,7 +261,7 @@ if($debug_hot) error_log("in " . __CLASS__. " Method " . __METHOD__ . " Line=" .
 		if (!isset($key['query']) ) $key['query'] = $Title;
 		$query = $key['query'];
 		//print_r($key); //JAH
-		$q = DataObject::get_one('TwitterQuery', "`Title`='". Convert::raw2sql( $Title) ."'");
+		$q = DataObject::get_one('TwitterQuery', '"Title"=\''. Convert::raw2sql( $Title) ."'");
 		if ($q && ($q->lowestID === 0 || $q->highestID === 0) ) {
 			$q->delete();
 			unset($q);

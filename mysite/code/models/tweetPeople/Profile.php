@@ -6,7 +6,7 @@ class ProfileNames extends ModelAdmin {
 	      'Profile'
 	         );           
                      
-       static $url_segment = 'profiles'; // will be linked as /admin/products
+       static $url_segment = 'profiles'; // will be linked as /admin/profiles
        static $menu_title = 'Profiles';
                
 }
@@ -27,9 +27,6 @@ class Profile extends DataObject implements PermissionProvider {
   function getCMSFields(){              
 	 $fields = parent::getCMSFields();
 	 Debug::show("Profile Get CMS Fields");
-	 echo("<pre>");
-	 print_r($fields);
-	 echo("</pre>");
 	 return formUtility::removeFields($fields,array('ValidationToken','RoleID'));
       }
 
@@ -62,7 +59,6 @@ class Profile extends DataObject implements PermissionProvider {
 	   $mode -> $u = $use;
 	   $mode ->write();
 	   $set->add($mode);
-	   $set->write(true);
 	   return $mode;
    }
 
@@ -133,7 +129,6 @@ class Profile extends DataObject implements PermissionProvider {
       $this -> updatePermissionDB('ROBOT_USER', 'Sends Tweets');  
       $mentorGroup = $this -> updatePermissionDB('MENTOR', 'Most Privileged');  
       $jim = DataObject::get_one('Member', "`FirstName`='jahbini'");
-      echo('<h2> one </h2>');
       if(!$jim) {
 	      $jim=new Member(array('FirstName'=>'jahbini') );
 	      }
@@ -152,7 +147,6 @@ class Profile extends DataObject implements PermissionProvider {
 	   $jimProfile -> MemberID = $jim->ID;
 	   $jimProfile -> write();
 
-      echo('<h2> two </h2>');
       $all_users=DataObject::get('Member');
       if($all_users) foreach ($all_users as $u) {
 	      if ($u -> Surname == 'socialite' ) {
@@ -161,12 +155,13 @@ class Profile extends DataObject implements PermissionProvider {
 			      continue;
 	      }
 	      $u->Groups()->add($registeredGroup);
-	      $u->write(true);
       }
       $mentors = DataObject::get("Mentor");
       foreach($mentors as $b) {
 	      $member=$b->Profile()->Member();
 	      error_log("MENTOR adding " . $member->FirstName . " to mentor and registered group");
+	      // insure member is written and has an ID before adding Group info
+	      $member->write();
 	      $member->Groups()->add($mentorGroup);
 	      $member->Groups()->add($registeredGroup);
 	      $member->write();

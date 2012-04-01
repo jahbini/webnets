@@ -18,7 +18,7 @@ class TweetUserMaintenance {
 				error_log("break on watchdog");
 				break;
 			}
-			$tu = DataObject::get_one('TweetUser', 'evaluate=true');
+			$tu = DataObject::get_one('TweetUser', '"evaluate"=true');
 			if (!$tu) break;
 		$this->TweetUser = $tu;
 			$tu -> ToDoAccess = $this->ToDoAccess;
@@ -29,7 +29,7 @@ class TweetUserMaintenance {
 	}
 
 	function fillOne ($tu=false) {
-		if(!$tu) $tu = DataObject::get_one('TweetUser', 'received=false');
+		if(!$tu) $tu = DataObject::get_one('TweetUser', '"received"=false');
 		$this->TweetUser = $tu;
 		error_log("rating the user:" . $tu->screen_name);
 		$tu -> ToDoAccess = $this->ToDoAccess;
@@ -407,7 +407,7 @@ JS
 				$u->unCached=false;
 			       	return $u;
 			}
-			$t = DataObject::get_one('TweetUser',"`screen_name`='" . Convert::raw2sql($screen_name) ."'");
+			$t = DataObject::get_one('TweetUser','"screen_name"=\'' . Convert::raw2sql($screen_name) ."'");
 			//error_log("jah 1 screen name = $screen_name");
 			if (!$t) {
 				$t = new TweetUser();

@@ -132,6 +132,8 @@ class Tell140Page_Controller extends ContentController {
 		   $userState = self::sessionInfo('UserState', true, 'loggedIn');
 		   break;
 	   case 'loggedIn':
+	      $loginID=5;
+		   Debug::show("logged in as $loginID");
 		   $this ->profile= DataObject::get_one('Profile', 'MemberID=' . $loginID);
 		   Debug::show($this->profile);
 		   $this->mentee = TweetUser::getTweetUser($this->profile->Name);

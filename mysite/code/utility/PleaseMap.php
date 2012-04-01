@@ -373,6 +373,8 @@ class SaneRest extends ViewableData {
 		if(!$params) $params = array();
 		$this->params = $params;
 		$this->queryString = http_build_query($params,'','&');
+		Debug::show("Setting the query as :$".$this->queryString);
+		if($params['q']== '') Debug::backTrace();
 	}
 
 	function getQueryString ( ) {
