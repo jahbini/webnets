@@ -45,16 +45,17 @@ global $consumer_secret;
 
   global $MentorLocation;
   $MentorLocation = 'en';
-  global $WantedSubdomain;
+  global $WantedSubDomain;
 
-global $WantedSubdomain;
-  $WantedSubdomain = array_shift($names);
-  if (strcasecmp($WantedSubdomain,"www") == 0) $WantedSubdomain = array_shift($names);
-if (!$WantedSubdomain) $WantedSubdomain= 'all';
-switch ($WantedSubdomain) {
+global $WantedSubDomain;
+  $WantedSubDomain = array_shift($names);
+  if (strcasecmp($WantedSubDomain,"www") == 0) $WantedSubDomain = array_shift($names);
+if (!$WantedSubDomain) $WantedSubDomain= 'all';
+switch ($WantedSubDomain) {
 default: $WantedSubDomain = 'all';
 }
 
+error_log("config says WantedSubDomain= $WantedSubDomain");
 /* use tell140 credentials */
 	$consumer_key = 	"uCTUCMz2s5K4fxqzTThiQ";
 	$consumer_secret = "nvrbum4ruYGX3irYq42TGy4rbY2vN0uetaaOwykF0Ls";
@@ -94,7 +95,9 @@ function &_v($parent,$index,$kind = "stdClass",$fail=true){
 }
 
 $_GET['isDev']=1;
+function ERROR_LOGGER($f) {error_log($f); }
 
 Security::setDefaultAdmin('jahbini','password');
 function _e($msg) {user_error($msg,E_USER_ERROR);}
 function _w($msg) {user_error($msg,E_USER_WARNING);}
+define('RELAY_HOST', 'webnets');

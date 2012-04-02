@@ -278,4 +278,3 @@ class Tweet extends DataObject {
 		return $t;
 	}
 }
-?>

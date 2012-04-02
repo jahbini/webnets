@@ -169,5 +169,3 @@ function createUser($data, $form) {
    }
 
 }
-
-?>

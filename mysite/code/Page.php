@@ -44,8 +44,8 @@ class Page_Controller extends ContentController {
 
 	public function subDomain () {
 		if ($this -> DisableSubDomain) return false;
-	global $wantedSubDomain;
-		$the_sub = DataObject::get_one('SubDomain','"Title"=' ."'$wantedSubDomain'");
+	global $WantedSubDomain;
+		$the_sub = DataObject::get_one('SubDomain','"Title"=' ."'$WantedSubDomain'");
 		return $the_sub;
 	
 	}

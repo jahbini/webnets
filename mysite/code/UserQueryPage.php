@@ -94,4 +94,3 @@ class UserQueryPage_Controller extends Page_Controller {
 		return $this -> renderWith(array('UserQueryPage', 'Page') ) ;
 	}
 }
-?>

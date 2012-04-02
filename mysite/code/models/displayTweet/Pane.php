@@ -8,5 +8,3 @@ class Pane extends DataObject {
 
 
 }
-
-?>

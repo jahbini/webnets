@@ -7,7 +7,7 @@ class SubDomain extends DataObject {
 		, 'Content' =>'HTMLText'
 	);
 
-	public static $has_one = array( 'Organizer' => 'Organizer'
+	public static $has_one = array( 'Organizer' => 'Mentor'
 	);
 
 }

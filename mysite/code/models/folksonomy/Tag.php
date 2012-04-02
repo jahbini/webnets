@@ -177,5 +177,3 @@ static function extractTags($string) {
    }
 
 }
-
-?>

@@ -86,6 +86,3 @@ class ProfileAuthenticator extends Authenticator {
 		return "Username &amp; Password";
 	}
 }
-
-
-?>

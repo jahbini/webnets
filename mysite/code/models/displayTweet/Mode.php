@@ -5,4 +5,3 @@ class Mode extends DataObject {
 	static $has_one = array('Profile' => 'Profile');
 
 }
-?>

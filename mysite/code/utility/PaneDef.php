@@ -113,7 +113,7 @@ class PaneDef {
 
 	static $RefBack = array();
 	static function JsonToObject($j,$attach=false) {
-		Debug::show($j);
+		//Debug::show($j);
 		if (is_string($j) ) {
 			$jj = new Services_JSON( SERVICES_JSON_LOOSE_TYPE);
 			$j = $jj->decode($j);

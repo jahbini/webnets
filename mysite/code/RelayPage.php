@@ -112,4 +112,3 @@ class RelayPage_Controller extends Page_Controller {
 	   return( $rv);
    }
 }
-?>

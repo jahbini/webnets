@@ -27,4 +27,3 @@ class FromDirectRelayQuery extends DirectRelayQuery {
 	}
 
 }
-?>

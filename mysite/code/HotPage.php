@@ -18,4 +18,3 @@ function existingQueryForm () { return ""; }
 function TweetBox () { return ""; }
 
 }
-?>

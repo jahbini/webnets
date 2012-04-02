@@ -70,5 +70,3 @@ static function newTweet($text, TweetUser $user, $extraTag=false) {
 }
 
 }
-
-?>

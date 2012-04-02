@@ -39,4 +39,3 @@ class PublicRelayQuery extends RelayQuery {
 		return $range;
 	}
 }
-?>

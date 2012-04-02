@@ -185,4 +185,3 @@ if($enter_tweet) {
 	}
 
 }
-?>

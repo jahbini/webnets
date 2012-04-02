@@ -127,13 +127,13 @@ class PseudoRelayQuery  {
 	}
 };
 
-global $WantedSubdomain;
-class GraphPage_Controller extends Page_Controller {
+class GraphPage_Controller extends Tell140Page_Controller {
 	var $profile = false;
 	var $alsoP = false;
    function init() {
+global $WantedSubDomain;
       parent::init();
-      $this -> mentor = DataObject::get_one('SubDomain',$WantedSubdomain)->Organizer();
+
       if( $this->not_ajax ) {
 	      //Requirements::javascript('tell140/javascript/tools.tooltip-1.0.2.js');
 	      Requirements::javascript('tell140/javascript/hoverIntent.min.js');
@@ -145,7 +145,7 @@ function existingQueryForm () { return ""; }
 /*
  */
 function Queries () {
-	//error_log("IN Q U E R I E S");
+	error_log("IN Q U E R I E S");
 	$refresh = "<div id='refresh'> Refresh Cycle: " . "<form class='refresher'>"
 		. "<span class='refresher'><input type='radio' name='refreshx' value='auto'>&nbsp;automatic</span>"
 		. "<span class='refresher'><input type='radio' name='refreshx' value='once'>&nbsp;refresh once</span>"
@@ -157,15 +157,23 @@ function Queries () {
 	      $currentMode = 'Attract';
 	      $mode = $this->mentor-> Profile() ->getModeByUse($currentMode);
 	      //Debug::show($mode);
-	      $p = $mode -> Panes("","`userKey` ASC");
+	      $p = $mode -> Panes("",'"userKey" DESC');
 	} else {
-	      $p = $this->profile-> getModeByUse('LoggedIn') -> Panes("","`userKey` ASC");
+	      $p = $this->profile-> getModeByUse('LoggedIn') -> Panes("",'"userKey" DESC');
 //Debug::show($this->profile);
 	  }	
-//Debug::show($p);
 	if (! $p->exists() ){
-	 $p = $this->mentor -> Profile() -> getModeByUse('mentored') -> Panes("",'"userKey" ASC');
-	//	return "<h1> Please visit your Profile Page and design your Queries Display</h1>".$this->downlinePix() . $this->uplinePix() . $this->publicPix();
+	//   Debug::show($this->mentor);
+	   $p = $this->mentor -> Profile();
+	   //Debug::show($p);
+	   if (!$p->ID) $p->write();
+	   $p =  $p-> getModeByUse('mentored');
+	   //Debug::show($p);
+	   if (! $p->ID) $p ->write();
+	   //Debug::show($p);
+	   $p= $p -> Panes("",'"userKey" ASC');
+	   //Debug::show($p);
+	//	return "<h1> Please visit your Profile Page and design your Queries Display " . $this->mentor->name ." </h1>";
 
 	}
 	$count=1;
@@ -188,7 +196,7 @@ function Queries () {
 			   // no authentication needed
 				$pv = new PseudoRelayQuery($q->requestString().'.json?'. http_build_query($q->requestParams(),'','&'),$q->requestKind);
 				//Debug::show($pv);
-			//	$pen = DataObject::Get_one('PenName', "`screen_name` = 'hotinhnl'" );
+			//	$pen = DataObject::Get_one('PenName', '"screen_name" = 'hotinhnl'" );
 			//	$pv -> RequestString  = 'index/' . $q->ID;
 			//	$pv ->createAction($pen->screen_name);
 				$pv ->createAction('');
@@ -256,4 +264,3 @@ private function divContents($divname,$Title,$sticks,$visuals) {
 
 	}
 }
-?>

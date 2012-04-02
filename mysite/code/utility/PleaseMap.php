@@ -373,8 +373,8 @@ class SaneRest extends ViewableData {
 		if(!$params) $params = array();
 		$this->params = $params;
 		$this->queryString = http_build_query($params,'','&');
-		Debug::show("Setting the query as :$".$this->queryString);
-		if($params['q']== '') Debug::backTrace();
+		//Debug::show("Setting the query as :$".$this->queryString);
+		//if($params['q']== '') Debug::backTrace();
 	}
 
 	function getQueryString ( ) {
@@ -408,7 +408,7 @@ class RestfulService_Response extends SS_HTTPResponse {
 	}
 	
 	function __construct($body, $statusCode = 200, $headers = null) {
-		Debug::show ("BODY = $body");
+		//Debug::show ("BODY = $body");
 		$this->setbody($body);
 		$this->setStatusCode($statusCode);
 		$this->headers = $headers;

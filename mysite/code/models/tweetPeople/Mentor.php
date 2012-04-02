@@ -14,7 +14,7 @@
 
 class Mentor extends UsersPenName {
 	// a birds of a feather collector
-	static $db = array ('GeoLocation'=>'Varchar','Salutation' => 'Varchar','Interaction'=> 'Boolean' );
+	static $db = array ('GeoLocation'=>'Varchar','Salutation' => 'Varchar','Interaction'=> 'Boolean', 'TwitterName' => 'Varchar' , 'FaceBookName' => 'Varchar');
 	static $has_many = array('Contests' => 'Contest');
 
 	static $indexes = array ('GeoLocation' => true);
@@ -167,4 +167,3 @@ JSON
 		}
 	}
 }
-?>

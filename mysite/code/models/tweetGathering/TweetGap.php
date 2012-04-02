@@ -284,4 +284,3 @@ $this->setStat("Mid Gap Tweets below " . $this->current() .", my parent ID = {$p
 	}
 	
 }
-?>

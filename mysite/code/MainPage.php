@@ -187,4 +187,3 @@ class MainPage_Controller extends Page_Controller {
 	}
 	
 }
-?>

@@ -100,4 +100,3 @@ class DirectRelayQuery extends RelayQuery {
 	}
 
 }
-?>

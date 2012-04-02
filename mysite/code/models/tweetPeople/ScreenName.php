@@ -20,4 +20,3 @@ class ScreenName extends DataObject {
 	static $belongs_many_many =array ('TweetUsers' => 'TweetUser');
 
 }
-?>

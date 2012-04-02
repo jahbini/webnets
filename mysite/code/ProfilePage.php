@@ -756,4 +756,3 @@ function canEntry($field) {
    return true;
    }
 }
-?>

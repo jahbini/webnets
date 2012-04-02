@@ -648,4 +648,3 @@ if($follow_worthy < 0.1) $follow_worthy = 0.1;
 	}
 
 }
-?>

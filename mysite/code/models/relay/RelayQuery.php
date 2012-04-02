@@ -294,4 +294,3 @@ if($debug_hot) error_log("in " . __CLASS__. " Method " . __METHOD__ . " Line=" .
 		return $q;
 	}
 }
-?>

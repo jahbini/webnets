@@ -43,4 +43,3 @@ class FollowersRelayQuery extends TweetRelayQuery {
 		return $range;
 	}
 }
-?>

@@ -9,4 +9,3 @@ class PenNames extends ModelAdmin {
   static $menu_title = 'Twitter Names';
  
 }
-?>

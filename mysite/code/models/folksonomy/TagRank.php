@@ -35,4 +35,3 @@ class RankTags extends Controller{
 		return "";
 	}
 }
-?>

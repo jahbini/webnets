@@ -62,4 +62,3 @@ class TwitterIt extends DataObject {
 	return false;
 	}
 }
-?>

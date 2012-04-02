@@ -1,7 +1,7 @@
 <?php
 // vim:sw=3:sts=3:ft=php:    
 
-class Tell140Page extends SiteTree {
+class Tell140Page extends Page {
    static $db = array(
    );
    static $has_one = array(
@@ -76,7 +76,7 @@ JS
 	      function forTemplate() { return $this->renderWith(array( $this->class, 'TweetForm')); }
 }
 
-class Tell140Page_Controller extends ContentController {
+class Tell140Page_Controller extends Page_Controller {
 	var $alsoP = false;
 	var $not_ajax = true;
 	var $requiresTweetAction = true;
@@ -85,16 +85,21 @@ class Tell140Page_Controller extends ContentController {
 	var $extraLogMsg = "";
 	var $profile = false;
 	var $member = false;
+	var $subDomain;
+	var $mentor;
 
 	protected function interpolate($string) {
 		return str_replace(array("#mentor#", "#mentee#") , array($this->mentor->screen_name, ($this->mentee?$this->mentee->screen_name:'unknown') ) , $string);
 	}
    function init() {
-      //error_log("Page controller init");
+      error_log("Page controller init");
 	   parent::init();
 	   global $MentorLocation;
+	   global $WantedSubDomain;
 	   Mentor::setMentorLocation($MentorLocation);
-	   $this->mentor = Mentor::getMentor();
+	   error_log("wanted SubDomain = $WantedSubDomain");
+	   $this -> subDomain= DataObject::get_one('SubDomain','"Title"=\''.$WantedSubDomain."'");
+	   $this->mentor = $this->subDomain->Organizer();
 	   error_log("Mentor is " . $this->mentor->screen_name);
 	   global $userState;
 	   $this->RequestedTweet = false;
@@ -106,8 +111,10 @@ class Tell140Page_Controller extends ContentController {
 	   }
 
 	   $loginID = Session::get('loggedInAs');
+	   $userState =  self::sessionInfo('UserState');
+	   error_log(">>>> User state before = $userState, Log in ID = $loginID");
 	   $userState =  self::sessionInfo('UserState',$loginID,($loginID?'loggedIn':'unknown' ) );
-	   error_log(">>>> User state before = $userState");
+	   error_log(">>>> User state after = $userState");
 	   switch ($userState) {
 	   case 'unknown': $userState = self::sessionInfo('UserState',true,'anonymous');
 	   case 'anonymous':
@@ -132,10 +139,9 @@ class Tell140Page_Controller extends ContentController {
 		   $userState = self::sessionInfo('UserState', true, 'loggedIn');
 		   break;
 	   case 'loggedIn':
-	      $loginID=5;
-		   Debug::show("logged in as $loginID");
+		   //Debug::show("logged in as $loginID");
 		   $this ->profile= DataObject::get_one('Profile', 'MemberID=' . $loginID);
-		   Debug::show($this->profile);
+		   //Debug::show($this->profile);
 		   $this->mentee = TweetUser::getTweetUser($this->profile->Name);
 		   self::sessionInfo('socialiteProfileID',true,0);
 		   break;
@@ -168,13 +174,15 @@ class Tell140Page_Controller extends ContentController {
 
 	$this->not_ajax = ! Director::is_ajax();
        if($this->not_ajax) {	
-	       Requirements::javascript('tell140/javascript/jquery-1.3.2.js');
+	  error_log("Requireing javascript");
+	       Requirements::javascript('mysite/javascript/jquery-1.3.2.js');
 	      Requirements::block(THIRDPARTY_DIR. '/jquery/jquery.js');
 	      Requirements::javascript(THIRDPARTY_DIR . '/jquery/plugins/form/jquery.form.js');
 	      if($this->requiresTabAction){
-		   Requirements::javascript('tell140/javascript/tools.tabs-1.0.1.js');
+		   Requirements::javascript('mysite/javascript/tools.tabs-1.0.1.js');
 		      View::wrapJava('$("ul.tabs").tabs("div.panes > div");');
-		      Requirements::css('tell140/css/tabs.css');
+		      Requirements::css('mysite/css/tabs.css');
+		      Requirements::css('mysite/css/tweets.css');
 	      }
 	      if($this->requiresTweetAction) {
 		      self::RequireTweetAction();
@@ -473,13 +481,13 @@ class Tell140Page_Controller extends ContentController {
 	}
 
 static function RequireTweetAction(){
-   Requirements::javascript('tell140/javascript/hoverIntent.min.js');
-   Requirements::javascript('tell140/javascript/maxlength.js');
+   Requirements::javascript('mysite/javascript/hoverIntent.min.js');
+   Requirements::javascript('mysite/javascript/maxlength.js');
    if(Director::isLive() && ! Session::get('notrack') =="true" ) {
-      //Requirements::javascript('tell140/javascript/waterfall.min.js');
-      Requirements::javascript('tell140/javascript/waterfall.js');
+      //Requirements::javascript('mysite/javascript/waterfall.min.js');
+      Requirements::javascript('mysite/javascript/waterfall.js');
    } else {
-      Requirements::javascript('tell140/javascript/waterfall.js');
+      Requirements::javascript('mysite/javascript/waterfall.js');
    }
 }
 
@@ -622,4 +630,3 @@ static function RequireTweetAction(){
 	}
 
 }
-?>

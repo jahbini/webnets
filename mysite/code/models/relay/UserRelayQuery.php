@@ -67,4 +67,3 @@ class UserRelayQuery extends RelayQuery {
 		return $new_user;
 	}
 }
-?>

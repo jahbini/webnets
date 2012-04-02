@@ -27,4 +27,3 @@ class TagPair extends DataObject {
 	return $star;
 	}
 }
-?>

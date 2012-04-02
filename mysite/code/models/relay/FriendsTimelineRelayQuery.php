@@ -41,4 +41,3 @@ class FriendsTimelineRelayQuery extends TweetRelayQuery {
 	}
 
 }
-?>

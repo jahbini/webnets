@@ -80,4 +80,3 @@ $realCut = chopper($lt1,1,140);
 echo($realCut . "\n");
 echo(strlen($realCut) . "\n" );
 
-?>

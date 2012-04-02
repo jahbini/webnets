@@ -52,4 +52,3 @@ class FriendsRelayQuery extends TweetRelayQuery {
 	}
 
 }
-?>

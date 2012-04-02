@@ -123,4 +123,3 @@ class TagPage_Controller extends ContentController {
 	 */
 	
 }
-?>

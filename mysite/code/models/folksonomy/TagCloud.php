@@ -73,4 +73,3 @@ class TagCloud_Controller extends ContentController {
 	 */
 	
 }
-?>

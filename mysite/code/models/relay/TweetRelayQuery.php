@@ -43,4 +43,3 @@ class TweetRelayQuery extends RelayQuery {
 		return $new_user;
 	}
 }
-?>

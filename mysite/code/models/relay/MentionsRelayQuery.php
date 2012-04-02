@@ -42,4 +42,3 @@ class MentionsRelayQuery extends TweetRelayQuery {
 		return $range;
 	}
 }
-?>

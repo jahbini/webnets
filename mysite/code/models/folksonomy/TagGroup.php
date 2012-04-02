@@ -91,4 +91,3 @@ class TagGroup extends DataObject {
 	      $cluster->write();
 	   }
 }
-?>

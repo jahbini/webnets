@@ -114,5 +114,3 @@ class PenName extends TweetUser {
 		return $self;
 	}
 }
-
-?>

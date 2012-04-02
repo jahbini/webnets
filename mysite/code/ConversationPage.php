@@ -98,4 +98,3 @@ JS
 		return FormResponse::respond();	
 	}
 }
-?>

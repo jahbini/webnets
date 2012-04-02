@@ -9,4 +9,3 @@ class CannedMessage extends DataObject {
 		parent::onWrite();
 	}
 }
-?>

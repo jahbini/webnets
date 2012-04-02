@@ -48,4 +48,3 @@ function WatchList () {
    return $this->Watches;
 }
 } // end class
-?>

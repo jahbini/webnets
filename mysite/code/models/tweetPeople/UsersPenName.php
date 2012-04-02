@@ -488,4 +488,3 @@ SQL
 		return false;
 	}
 }
-?>

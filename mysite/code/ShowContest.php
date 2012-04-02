@@ -187,4 +187,3 @@ class ShowContest_Controller extends Page_Controller {
 	}
 	
 }
-?>
