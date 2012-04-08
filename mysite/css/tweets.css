@@ -1,6 +1,6 @@
 #userProfileForm { background: #eee; width:37% ; float:left; font-size:110%; padding: 0 .5em 0 .5em;}
 #VisualsForm { background: #eee; width:37% ; float:right; font-size:110%; padding: 0 .5em 0 .5em;}
-#penNames { background: #ddd; width:22%; float:right; font-size:110%; padding: 0 1em 0 0.5em; margin-right:2px;}
+#penNames { background: #ddd; width:55%; float:right; font-size:110%; padding: 0 1em 0 0.5em; margin-right:2px;}
 #penNames ol { list-style-type: none; margin: 0 0 0 1em;}
 #QueryRegion { background: #bbb; clear:left; padding: 0 .5em 0 .5em;}
 #newQuery { background: #ccc;}

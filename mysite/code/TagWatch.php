@@ -1,7 +1,7 @@
 <?php
 // vim:sw=3:sts=3:ft=php
 
-class TagWatch extends Page_Controller {
+class TagWatch extends Tell140Page_Controller {
    var $Tags;
    var $Watches;
    var $Entry;

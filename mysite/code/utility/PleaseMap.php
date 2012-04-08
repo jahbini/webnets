@@ -501,9 +501,12 @@ class SaneResponse extends RestfulService_Response {
 		return $as;
 	}
 }
+/*
+ * formUtility -- helper fn-- remove fields from CMS tabs
+ */
 class formUtility {
 	/**
-	 * remove fields from a form by array
+	 * removeFields -- remove fields from a SS form by array
 	 */
      static function &removeFields(&$fields,$removes){
 		           foreach($removes as $erase) {
@@ -512,7 +515,21 @@ class formUtility {
 					        return $fields;
 					     }  
 }
+/*
+ * niceData - form proper quoted sql phrase for get, and helper get_one (GetOne)
+ */
+class niceData {
+	  static function Query($field,$what,$match='='){
+		  return '"' . $field. '"' . $match . " '" . $what . "'";
+	  }
+	  static function GetOne($obj,$field,$what,$match='='){
+		  return DataObject::get_one($obj,self::Query($field,$what,$match));
+	  }
+}
 
+/*
+ * PleaseMap -- mapitems in an array or object into another array or object
+ */
 class PleaseMap {
 	static function map2(&$destination_array,$mapper,$source_array='_POST') {
 		if(is_class($destination) ) {

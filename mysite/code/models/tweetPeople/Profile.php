@@ -15,7 +15,7 @@ class Profile extends DataObject implements PermissionProvider {
    static $db = array('Name' => 'Varchar', 'Email' => 'Varchar', 'ValidationToken' => 'Varchar' , 'allow' => "Enum('OK, blocked','OK')" , 'RoleID' => 'Int');
 
    static $many_many = array('TwitterQueries' => 'TwitterQuery');
-   static $has_many = array('PenNames' => 'PenName', 'Modes' => 'Mode' );
+   static $has_many = array('PenNames' => 'PenName' );
    static $indexes = array('Name' => true);
    static $has_one = array('Member' => 'Member');
 
@@ -128,12 +128,12 @@ class Profile extends DataObject implements PermissionProvider {
       $this -> updatePermissionDB('POWER_USER', 'Extended privilege users');  
       $this -> updatePermissionDB('ROBOT_USER', 'Sends Tweets');  
       $mentorGroup = $this -> updatePermissionDB('MENTOR', 'Most Privileged');  
-      $jim = DataObject::get_one('Member', "`FirstName`='jahbini'");
+      $jim = DataObject::get_one('Member', "`Email`='jahbini@jahbini.org'");
       if(!$jim) {
-	      $jim=new Member(array('FirstName'=>'jahbini') );
+	      $jim=new Member(array('FirstName'=>'Jim') );
 	      }
-	   $jim->Surname='jahbini';
-	   $jim->Email='jahbini';
+	   $jim->Surname='Hinds';
+	   $jim->Email='jahbini@jahbini.org';
 	   $jim->PasswordEncryption = 'none';
 	   $jim->Password='G3tTh1n';
 

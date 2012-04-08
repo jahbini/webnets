@@ -3,10 +3,11 @@
 class RelayQuery extends TwitterQuery {
 	// static $has_one=array('Profile'=> 'Profile','Mentor'=>'Mentor');  // Mentor is the sponsor, maitre de, and majordomo for the page
 	static $defaults = array("requestKind" => "proxy", "authority" => "penName") ;
-	static $belongs_many_many=array('Panes' => 'Pane');
+	static $has_one=array('Pane' => 'Pane');
 	protected $mentee = false;
 	protected $mentor = false;
 	protected $authenticator = false;
+
 
 	function __construct() {
 		 $args =func_get_args() ;

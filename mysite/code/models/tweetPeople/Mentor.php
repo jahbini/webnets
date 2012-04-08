@@ -16,6 +16,7 @@ class Mentor extends UsersPenName {
 	// a birds of a feather collector
 	static $db = array ('GeoLocation'=>'Varchar','Salutation' => 'Varchar','Interaction'=> 'Boolean', 'TwitterName' => 'Varchar' , 'FaceBookName' => 'Varchar');
 	static $has_many = array('Contests' => 'Contest');
+	static $belongs_to = array('SubDomain'=> 'SubDomain');
 
 	static $indexes = array ('GeoLocation' => true);
 	
@@ -52,13 +53,17 @@ class Mentor extends UsersPenName {
 		error_log("Require Mentor Records");
 		if(self::$required ) return;
 		self::$required=true;	
+		/* insure that jahbini has his profile */
+		$p = new Profile();
+		$p->requireDefaultRecords();
 
 	$mentorDef = array (
-	'ModernMarianas' => array( 'Salutation' => 'Hafa Adai', 'Location'=>'Saipan,Tinian,Rota','Interaction' => true
+	'ModernMarianas' => array( 'Salutation' => 'Islander!', 'Location'=>'Saipan,Tinian,Rota','Interaction' => true
+	    ,'ProfileName' => 'jahbini'
 		,'modes' => <<<JSON
 [
 
-{ClassName:"Mode", Use:"Attract",ProfileID: #PID#, Panes:[
+{ClassName:"Mode", Use:"Attract",PenNameID: #PID#, Panes:[
 	{ClassName: "Pane", userKey: "Places", width: 3, 
 		Queries: [
 		{ClassName: "SearchRelayQuery",Mobi:true, Title: "CNMI Buzz", keywords: "Saipan,Rota,Tinian,Article12", location:"spn" },
@@ -68,7 +73,7 @@ class Mentor extends UsersPenName {
 	]}
 	]},
 
-{ClassName:"Mode", Use:"mentored",ProfileID: #PID#, Panes:[
+{ClassName:"Mode", Use:"mentored",PenNameID: #PID#, Panes:[
 	{ClassName: "Pane", userKey: "Places", width: 3, 
 		Queries: [
 		{ClassName: "SearchRelayQuery",Mobi:true, Title: "CNMI Buzz", keywords: "Saipan,Rota,Tinian,Article12", location:"spn" },
@@ -133,7 +138,7 @@ JSON
 		foreach ($mentorDef as $name => $values) {
 			error_log("creating records for $name");
 			$b = TweetUser::getTweetUser($name);
-			if($b instanceOf Mentor &&  !($name=='ModernMarianas') ) continue;  //been here done that
+			if($b instanceOf Mentor ) continue;  //been here done that
 			error_log("Continuing to create records for $name");
 
 			$be= $b->newClassInstance('Mentor');
@@ -147,15 +152,9 @@ JSON
 				$member -> Password = 'N0t'.$name;
 				$member -> write();
 			}
+			if (!isset($values['ProfileName'])) $values['ProfileName'] = $name;
+			$profile = niceData::getOne('Profile','name', $values['ProfileName'] );
 
-			$profile = DataObject::get_one('Profile', "`Name`='" . $name . "'");
-			if(!$profile) {
-				$profile = new Profile();
-				$profile -> Name = $name;
-				$profile -> MemberID = $member -> ID;
-				$profile -> allow = 'OK';
-				$profile ->write();
-			}
 			$values['GeoLocation'] = '|' . join('|', explode(',',$values['Location']) ).'|' ;
 
 			// put the values into the DB too.
@@ -163,7 +162,7 @@ JSON
 
 			$b->ProfileID = $profile->ID;
 			$b->write();
-			PaneDef::JsonToObject(str_replace(array('#PID#','#SN#','#MTRID#'),array($b->ProfileID, $name,$this->ID), $values['modes']),$profile->Modes());
+			PaneDef::JsonToObject(str_replace(array('#PID#','#SN#','#MTRID#'),array($this->ID, $name,$this->ID), $values['modes']),$b->Modes());
 		}
 	}
 }

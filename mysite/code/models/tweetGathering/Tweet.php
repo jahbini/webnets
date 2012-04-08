@@ -70,7 +70,6 @@ class Tweet extends DataObject {
 		$this->TweetUserID=$uID;
 		//error_log("setting TweetUserID =" . $uID );
 		$t->add(Tag::getTagByName($screen_name,'UserTag')->ID); //  add it to the simpletags
-		$t->write();
 		$this-> write();
 	}
 
@@ -83,7 +82,6 @@ class Tweet extends DataObject {
 		$t= $this->SimpleTags("1=0");
 		$uID=TweetUser::getTweetUser($screen_name,false)->ID;
 		$t->add(Tag::getTagByName($screen_name,'UserTag')->ID ); //  add it to the simpletags
-		$t->write();
 		$this-> write();
 	}
 
@@ -124,15 +122,10 @@ class Tweet extends DataObject {
 	}
 
 	public function tagMe($extraTag=false) {
-		//error_log("entering tagme");
 		$myTags = $this->SimpleTags();
-		$need_write=false;
 		if($extraTag) {
-			$need_write=true;
 			$myTags-> add($extraTag);
 		}
-		if($need_write)$this->write();
-		//error_log("leaving tagme");
 		return $myTags;
 	}
 
@@ -176,7 +169,7 @@ class Tweet extends DataObject {
 		}
 
 		//error_log("API Tweet Looking for Tweet # $ID");
-		DB::query('LOCK TABLES "Organizer" WRITE,"Mentor" WRITE, "BigTweet" WRITE, "Tweet" WRITE,"Tweet_SimpleTags" WRITE, "Tag" WRITE, "TweetUser" WRITE, "PenName" WRITE, "UsersPenName" WRITE');
+		DB::query('LOCK TABLES "Mentor" WRITE, "BigTweet" WRITE, "Tweet" WRITE,"Tweet_SimpleTags" WRITE, "Tag" WRITE, "TweetUser" WRITE, "PenName" WRITE, "UsersPenName" WRITE');
 		try{
 		$t = DataObject::get_one('Tweet','"StatusID"=\''. $StatusID. "'");
 		if (!$t ) {
@@ -198,7 +191,7 @@ class Tweet extends DataObject {
 		if($extraTag) $t->tagMe($extraTag);
 		$t->write();
 		} catch (Exception $e) {
-			error_log("EXCEPTION in Tweet storage to DB " . __FUNCTION__ . " msg " . $e->getMessage());
+			error_log("EXCEPTION in Tweet storage to DB " . __FUNCTION__ . __LINE__ . " msg " . $e->getMessage());
 		}
 	
 		DB::query('UNLOCK TABLES');
@@ -211,7 +204,7 @@ class Tweet extends DataObject {
 		if (strlen($text) >140 ) {
 			return BigTweet::newTweet($text, $user, $extraTag);
 		}
-		DB::query('LOCK TABLES "Organizer" WRITE,"Mentor" WRITE, "BigTweet" WRITE, "Tweet" WRITE,"Tweet_SimpleTags" WRITE, "Tag" WRITE, "TweetUser" WRITE, "PenName" WRITE, "UsersPenName" WRITE');
+		DB::query('LOCK TABLES "Mentor" WRITE, "BigTweet" WRITE, "Tweet" WRITE,"Tweet_SimpleTags" WRITE, "Tag" WRITE, "TweetUser" WRITE, "PenName" WRITE, "UsersPenName" WRITE');
 		try {
 		$idVal=$x['StatusID'];
 		$t = new Tweet($id);
@@ -226,7 +219,7 @@ class Tweet extends DataObject {
 		$t->write();
 		$t -> fromDB=false;
 		} catch (Exception $e) {
-			error_log("EXCEPTION in Tweet storage to DB " . __FUNCTION__ . " msg " . $e->getMessage());
+			error_log("EXCEPTION in Tweet storage to DB " . __FUNCTION__  . __LINE__. " msg " . $e->getMessage());
 		}
 		DB::query('UNLOCK TABLES');
 		return $t;
@@ -252,27 +245,38 @@ class Tweet extends DataObject {
 
 		$x['StatusID']=$idVal;
 
-		DB::query('LOCK TABLES "Organizer" WRITE,"Mentor" WRITE, "BigTweet" WRITE, "Tweet" WRITE,"Tweet_SimpleTags" WRITE, "Tag" WRITE, "TweetUser" WRITE, "PenName" WRITE, "UsersPenName" WRITE');
+		DB::query('LOCK TABLES "Mentor" WRITE, "BigTweet" WRITE, "Tweet" WRITE,"Tweet_SimpleTags" WRITE, "Tag" WRITE, "TweetUser" WRITE, "PenName" WRITE, "UsersPenName" WRITE');
 		try {
+		//error_log("getting existing Tweet");
 		$t = DataObject::get_one('Tweet','"StatusID"=\''. $idVal. "'");
 		unset($x['ID']);
 		unset($x['id']);
 		if (!$t) {
+		//error_log("creating new Tweet");
 			$t = new Tweet();
 			$t->StatusID=$idVal;
 			$t -> forceChange();
 			$t -> fromDB=false;
+		//error_log("using new Tweet");
 		} else {
+		//error_log("using existing Tweet");
 			$t -> fromDB=true;
 		}
+
+		//error_log("stuffing values");
 		if (is_array($x) ) foreach ($x as $key => $value) {
 			if($key== 'ID') continue;
+		//error_log("stuffing $key as $value");
 			$t -> {$key} = $value;
 		}
+		//error_log("tagging new Tweet");
 		$t->tagMe($extraTag);
+		//error_log("Writing new Tweet");
 		$t->write();
+		//error_log("Tweet Written");
 		} catch (Exception $e) {
-			error_log("EXCEPTION in Tweet storage to DB " . __FUNCTION__ . " msg " . $e->getMessage());
+			error_log("EXCEPTION in Tweet storage to DB " . __FUNCTION__  . __LINE__. " msg " . $e->getMessage());
+			die();
 		}
 		DB::query('UNLOCK TABLES');
 		return $t;

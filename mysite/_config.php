@@ -17,7 +17,7 @@ MySQLDatabase::set_connection_charset('utf8');
 
 // Set the current theme. More themes can be downloaded from
 // http://www.silverstripe.org/themes/
-SSViewer::set_theme('blackcandy');
+SSViewer::set_theme('Simple');
 
 // Set the site locale
 i18n::set_locale('en_US');
@@ -55,6 +55,7 @@ switch ($WantedSubDomain) {
 default: $WantedSubDomain = 'all';
 }
 
+error_log("-----------------------------------------------------------------");
 error_log("config says WantedSubDomain= $WantedSubDomain");
 /* use tell140 credentials */
 	$consumer_key = 	"uCTUCMz2s5K4fxqzTThiQ";
@@ -93,11 +94,15 @@ function &_v($parent,$index,$kind = "stdClass",$fail=true){
 	// we return false if the caller wants to suppress the error
 	return $fail;
 }
-
-$_GET['isDev']=1;
+//global $lucky;
+//$lucky="error_log('hello');";
+//eval($lucky);
+//$_GET['isDev']=1;
 function ERROR_LOGGER($f) {error_log($f); }
 
 Security::setDefaultAdmin('jahbini','password');
 function _e($msg) {user_error($msg,E_USER_ERROR);}
 function _w($msg) {user_error($msg,E_USER_WARNING);}
 define('RELAY_HOST', 'webnets');
+define('ANALYTICS', false);  //only enable google analytics when site is live
+Director::set_environment_type("dev");

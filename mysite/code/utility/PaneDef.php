@@ -8,7 +8,7 @@ class PaneDef {
 	protected  $modeName;
 
 	function setMode ($name) {
-		$this->mode = $this->mentor->Profile()->getModeByUse($name);
+		$this->mode = $this->mentor->getModeByUse($name);
 		$this->modeName = $name;
 	}
 
@@ -26,9 +26,9 @@ class PaneDef {
 	 * at call time
 	 */
 	function shallowCopy() {
-		$toMode = $this->mentee->Profile() ->getModeByUse('Mentored');
+		$toMode = $this->mentee ->getModeByUse('Mentored');
 		$to = $toMode->Panes();
-		$from = $this->mentor->Profile() ->getModeByUse('LoggedIn')->Panes();
+		$from = $this->mentor ->getModeByUse('LoggedIn')->Panes();
 
 		$to->removeAll();
 		// go through all for mentor's panes and create new mentee panes
@@ -43,9 +43,7 @@ class PaneDef {
 				$nq ->add($q);
 			}
 			$np -> write();
-			$nq->write();
 		}
-		$to->write(true);
 		$toMode->write(true);
 	}
 
@@ -75,9 +73,7 @@ class PaneDef {
 				$nq -> add( $npq );
 			}
 			$np -> write();
-			$nq->write();
 		}
-		$to->write(true);
 		$toMode->write(true);
 	}
 
@@ -88,9 +84,8 @@ class PaneDef {
 		//$this->mode = $this->mentor->Profile()->getModeByUse($name);
 		//$this->modeName = $name;
 		$mentor_screen_name=$this->mentor->screen_name;
-		$mentor_profile_id = $this->mentor->Profile()->ID;
 
-		$modes = $this->mentor->Profile()->Modes();
+		$modes = $this->mentor->Modes();
 		$newModes = self::JsonToObject($j,$modes);
 		return $newModes;
 	}
@@ -137,7 +132,8 @@ class PaneDef {
 		$c = $j['ClassName'];
 		$newObject = new $c();
 		$newObject -> write();
-		if($need_mobi= $j['Mobi'] ) {
+		$need_mobi=false;
+		if(isset($j['Mobi']) && $need_mobi= $j['Mobi'] ) {
 			unset ($j['Mobi']);
 		}
 		foreach ($j as $key => $val ) {

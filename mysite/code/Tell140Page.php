@@ -139,11 +139,20 @@ class Tell140Page_Controller extends Page_Controller {
 		   $userState = self::sessionInfo('UserState', true, 'loggedIn');
 		   break;
 	   case 'loggedIn':
-		   //Debug::show("logged in as $loginID");
 		   $this ->profile= DataObject::get_one('Profile', 'MemberID=' . $loginID);
 		   //Debug::show($this->profile);
+		   if ($this->profile){
 		   $this->mentee = TweetUser::getTweetUser($this->profile->Name);
 		   self::sessionInfo('socialiteProfileID',true,0);
+		   } else {
+		      /* not logged in, stale cookie! */
+	   	self::sessionInfo('socialiteProfileID',true,0);
+	   	self::sessionInfo('loggedInAs',true,0);
+		$this->mentee = false;
+		$this->profile=Singleton('Profile');
+		$this->profile->Name = "unknown user";
+	       	error_log("State = anonymous, Got Socialite profile id = NULL" );
+		   }
 		   break;
 	   default:
 		   error_log("unknown State = $userState" );
@@ -307,7 +316,7 @@ class Tell140Page_Controller extends Page_Controller {
 	   switch ($userState) {
 	      default:
 	      case 'anonymous':
-		    $name = Mentor::getMentor()->Salutation;
+		    $name = $this->mentor->Salutation;
 		     $form=  "Hello $name, have we met?"
 		  ."  <a href='" . Director::baseURL() 
 		  ."Security/login" . "'>Login?</a>";
