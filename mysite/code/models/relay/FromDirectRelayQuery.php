@@ -12,7 +12,6 @@ class FromDirectRelayQuery extends DirectRelayQuery {
 		call_user_func_array('parent::__construct', $args );
 	}
 
-
 	function mySetQueryTag(){
 		if ($t = parent::QueryTagOK()) return  $t;
 		return parent::mySetQueryTag('Direct From ' . $this->forcePenName() );

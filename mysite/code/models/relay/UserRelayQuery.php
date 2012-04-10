@@ -11,6 +11,9 @@ class UserRelayQuery extends RelayQuery {
 		call_user_func_array('parent::__construct', $args );
 	}
 
+	function makeForm($who,$headline, $caller){
+		return $this->finalMakeForm($who,$headline, new TextField($who. 'PenName','From which Twitter account?',null));
+	}
 
 	function mySetQueryTag(){
 		if ($t = parent::QueryTagOK()) return  $t;

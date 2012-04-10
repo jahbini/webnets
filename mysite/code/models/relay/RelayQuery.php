@@ -8,12 +8,25 @@ class RelayQuery extends TwitterQuery {
 	protected $mentor = false;
 	protected $authenticator = false;
 
-
 	function __construct() {
 		 $args =func_get_args() ;
 		 call_user_func_array('parent::__construct', $args );
 		//$this->requestKind= 'proxy';
 		//$this->authority='penName';
+	}
+
+	function finalMakeForm($who,$headline,$fields){
+		$group = new FieldGroup();
+		$group ->setName($who.'.FG');
+		$group->setTitle($headline);
+		foreach ($fields as $arg) { $group->push($arg); }
+		return  $group ;
+	}
+	function makeShortForm($fields){
+		// for hidden fields
+		$group = new FieldGroup();
+		foreach ($fields as $arg) { $group->push($arg); }
+		return  $group ;
 	}
 
 	function ToDoType() {

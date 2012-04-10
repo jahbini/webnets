@@ -1,11 +1,15 @@
 <?php
 class FriendsRelayQuery extends TweetRelayQuery {
 	static $defaults = array("authority" => "none", "requestKind"=>"browser");
+
 	static function standardQueryDef($params ,$more=array()){
 		$n = new FriendsRelayQuery();
 		return $n ->fillQuery($params,$more);
 	}
 
+	function makeForm($who,$headline, $caller){
+		return $this->finalMakeForm($who,$headline, new TextField($who. 'PenName','From which Twitter account?',null));
+	}
 
 	function __construct() {
 		$args =func_get_args() ;

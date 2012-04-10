@@ -45,23 +45,6 @@ class Profile extends DataObject implements PermissionProvider {
 
       return $profile;
    }
-
-   /*
-    * Get or Create a Mode by the intended Use: LoggedIn, Attract or
-    * whatever.  The mode is used to display the proper set of 
-    * panes on the display for the Mentor of the site
-    */
-   function getModeByUse($use) {
-	   $set = $this->Modes("`Use`='$use'");
-	   if($set->exists()) return $set->First();
-	   $mode = new Mode();
-	   $u="Use";   //  Use is a PHP reserved word, so we have to escape it
-	   $mode -> $u = $use;
-	   $mode ->write();
-	   $set->add($mode);
-	   return $mode;
-   }
-
    function provideLevels () {
      //return  array ( 'Watchers' ); // needs to consult permissions for this user
      return array('Watchers', 'Promoters', 'Administrators');

@@ -15,6 +15,16 @@ class PublicRelayQuery extends RelayQuery {
 		$this->authority='none';
 	}
 
+	function makeForm($who,$headline $penNames=null){
+		if (!$penNames ) $penNames=array($this->forcePenName());
+		$map=array();
+		foreach($penNames as $p){
+			if ($p == "#mentee") $map['Logged In User']='#mentee#';
+			else $map[$p] = $p;
+		}
+		if (count($map) ==1 ) return $this->makeShortForm(new Hiddenfield($who.".auth",'Selected', $p));
+		                else return $this->finalMakeForm($who,$headline, new DropdownField($who. '_penNames','user',$map));
+	}
 
 	function mySetQueryTag(){
 		if ($t = parent::QueryTagOK()) return  $t;

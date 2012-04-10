@@ -12,7 +12,6 @@ class FollowersRelayQuery extends TweetRelayQuery {
 	}
 
 
-
 	function mySetQueryTag(){
 		if ($t = parent::QueryTagOK()) return  $t;
 		return parent::mySetQueryTag('Followers of ' . $this->forcePenName() );

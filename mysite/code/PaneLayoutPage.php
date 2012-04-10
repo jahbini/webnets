@@ -28,16 +28,19 @@ class PaneLayoutPage_Controller extends ProfilePage_Controller {
       var $EditingPane=false;
       var $mode=null;
 
+      function instantiateFromPane($paneID){
+	   $this->wantedPane=DataObject::get_by_id('Pane',$paneID);
+	   $this->mode= $this->wantedPane->Mode();
+	   $this->PenName = $this->mode->PenName();
+	   $this->Profile = $this->PenName->Profile();
+      }
 	function editPaneInfo($request){
 	   $this->EditingPane=true;
 	   // All we have is the pane.  It belongs to a Mode, so get it
 	   // and chase back all the way to the Profile it belongs to
 	   // That way we recover all the context belonging to this page
 	   $paneID= $request->param('ID');
-	   $this->wantedPane=DataObject::get_by_id('Pane',$paneID);
-	   $this->mode= $this->wantedPane->Mode();
-	   $this->PenName = $this->mode->PenName();
-	   $this->Profile = $this->PenName->Profile();
+	   $this -> instantiateFromPane($paneID);
 	   return $this;
 	}
 	 function deletePaneInfo($request){
@@ -64,24 +67,24 @@ class PaneLayoutPage_Controller extends ProfilePage_Controller {
 
 	function displayForm() {
 	   if ($this->wantedPane) {
-	      Debug::show("We are at the edit pane #".$this->wantedPane->ID);
+	      //Debug::show("We are at the edit pane #".$this->wantedPane->ID);
 	      $f= $this->paneForm($this->mode->ID);
 	      $f ->LoadDataFrom($this->wantedPane); //existing pane
 	      return $f;
 	   }
 	   if ($this->wantedQuery) {
-	      Debug::show("We are at the edit query #".$this->wantedQuery->ID);
-	      $f = $this->queryForm ();
+	      //Debug::show("We are at the edit query #".$this->wantedQuery->ID);
+	      $f = $this->queryForm ($wantedQuery);
 	      $f -> LoadDataFrom($wantedQuery);
 	      return $f;
 	   }
 	   if ($this->newPane4Mode) { //newPane4Mode is the ModeID
-	      Debug::show("We are at the new Pane 4 Mode #".$this->newPane4Mode);
+	      //Debug::show("We are at the new Pane 4 Mode #".$this->newPane4Mode);
 	      $f=$this->paneForm($this->newPane4Mode);
 	      return $f;
 	   }
 	   if ($this->newQuery4Pane) {
-	      Debug::show("We are at the new query 4 pane #".$this->newQuery4Pane);
+	      //Debug::show("We are at the new query 4 pane #".$this->newQuery4Pane);
 	      $f = $this->queryForm ();
 	      return $f;
 	   }
@@ -136,6 +139,7 @@ class PaneLayoutPage_Controller extends ProfilePage_Controller {
 	   $pane=DataObject::get_by_id('Pane',$paneID);
 	   $this->mode= $pane->Mode();
 	   $this->PenName = $this->mode->PenName();
+	   //Debug::show($this->PenName);
 	   $this->Profile = $this->PenName->Profile();
 	   $this->newQuery4Pane=$paneID;
 	   $this->AltPen=$this->PenName;
@@ -164,147 +168,51 @@ class PaneLayoutPage_Controller extends ProfilePage_Controller {
 		return '';
 	}
 
-	function queryForm(){
-	   $m=$this->formJSONMenu();
+	function gimmePenNames(){
+	   return array($this->PenName()->screen_name);
+	}
+	function joinPenNames(){
+	   return join(' or ',$this->gimmePenNames() );
+	}
+	function queryForm($wantedQuery=false)
+	   {
+	      if (isset($_REQUEST['paneID'])){
+		 $this->instantiateFromPane($_REQUEST['paneID']);
+	      }
+	      $RelayClasses = array ( 
+		 'UserRelayQuery' => 'public messages sent from twitter account',
+		 'FriendsTimelineRelayQuery' => "messages from friend of ".$this->joinPenNames()." in Timeline",
+		 'FromDirectRelayQuery' => "Direct messages sent by ".$this->joinPenNames(),
+		 'ToDirectRelayQuery' => "messages directly to ".$this->joinPenNames(),
+		 'FollowersRelayQuery' => "Status from followers",
+		 'FriendsRelayQuery' =>"Status from friends of any twitter account",
+		 'MentionsRelayQuery' => "tweets containing @".$this->joinPenNames(),
+		 'SearchRelayQuery' => "messages with keywords"
+	      );
+	      if(!$wantedQuery || !($wantedQuery instanceof RelayQuery)) {
+		 $action = new FormAction("createQuery", "Create Query");
+		 $map = array();
+		 $f = new Fieldset();
+		 foreach($RelayClasses as $k=>$v) {
+		      $obj=singleton($k);
+		      $field= $obj->makeForm($k,$v,$this);
+		    $map[ $k .'//'. $v] = $field;
+		   }
 
-	   $fields= new FieldSet();
-	   if (! $this->wantedQuery ) {
-	   $p = DataObject::get_by_id('Pane', $this->newQuery4Pane);
-	   $v=new RelayQuery();
-	   } else {
-	      $v=$this->wantedQuery();
-	      $p = DataObject::get_by_id('Pane', $v->PaneID);
+		 $fs=new FieldList(new HeaderField("Select One"),  new SelectionGroup('allQueries',$map));
+	      } else {
+		 $action = new FormAction("editQuery", "Edit Query");
+		 $fs=new FieldList();
+		 $c= $wantedQuery->ClassName;
+		 $fs->push($c::makeForm($c,$RelayClasses[$c], $this));
+	      }
+	     return new Form($this,'queryForm?paneID='. $this->newQuery4Pane,$fs, new FieldList($action));
 	   }
-	    $count=1; // only one pane
-	    $paneGroup = new FieldGroup();
-	    $paneName = "Pane_" . $p->ID;
-	    $fields -> push(HiddenField::create($paneName.'ID')->setValue($p->ID) );
-				$vcount=1;
-				$visName = "Vis_".$vcount;
-
-	      $fields -> push(new HeaderField("What shall we get from Twitter?",'headQuery'));
-				$vd = $v->ID;
-				$fields -> push(HiddenField::create($visName.'ID')->setValue($vd) );
-		 $menuMap = array('first' => 1);
-				$menuCurrently = 2;
-				$main = $v->ClassName;
-				$authority = $v->ID;
-				if($main != "SearchRelayQuery") {
-					$main = $v->PenName() -> screen_name;
-					$authority = $v->ClassName;
-				}
-				$fields -> push( $d1 =new DropdownField($visName . "qMain", "request", $menuMap, $main));
-				$fields -> push( $d2 =new DropdownField($visName . "qAttr", "specifically?", $menuMap, $authority));
-				//$fields -> push(new TextField($visName . "request", "Request", $v->requestString));
-				//$fields -> push(HiddenField::create($visName."request")->setValue($v->requestString) );
-				$javaScripting ='$("#Form_visualFormEditor_'. $d1->id(). '").doubleSelect("Form_visualFormEditor_' . $d2->id() .'",dropSpec,'.
-					'{ preselectFirst: "' . $main . '" , preselectSecond: "' . $authority . '"}' 
-				       	.');';
-				$fields -> push(HiddenField::create($visName. 'Pane')->setValue($p->ID) );
-				
-
-		$fields->push(HiddenField::create('totalPanes')->setValue($count) );
-		$fields->push(HiddenField::create('totalQuery')->setValue($vcount) );
-				View::wrapJava( 'dropSpec = '.  $this-> formJSONMenu () .';' . $javaScripting);
-		return new Form($this,'visualFormEditor',$fields, new FieldList( new FormAction("editQuery","Edit Query")) );
-
+	function createQuery($data,$form) {
+	   $x= new $data['allQueries']();
+	   $form ->saveInto($x);
+	   $x->write();
+	   Director::redirect($this->Link() . 'allModes/' . $this->PenName()->ID);
 	}
-	function formJSONMenu () {
-	error_log("in " . __CLASS__. " Method " . __METHOD__ . " Line=" . __LINE__ );
-
-		$menu=array();
-		foreach( $this->menuJson as $key => $specification) {
-			switch ($key) {
-			case "PenName" : {
-				$penNames = $this->profile->PenNames();
-				if (!$penNames->exists() ) break;
-				$screenNames = $penNames->column('screen_name');
-				foreach ($penNames as $name) {
-					if($name instanceOf Mentor) {
-						$screenNames[] = '#mentee#';
-					}
-				}	
-				foreach ($screenNames as $p_name) {
-					$values = array();
-					foreach ($specification as $k =>$s) {
-						$values[ str_replace('#P#',$p_name , $s['Title'])]=$k;
-					}
-					$menu[$p_name] = array(
-						'key' =>  $p_name,
-						'values' => $values,
-						'defaultvalue' => 'UserRelayQuery'
-						);
-				}
-				break;
-			}
-			case "Query" : {
-				$queries = $this -> profile-> TwitterQueries();
-				$values = array();
-				error_log(print_r($specification,1));
-				foreach ( $queries as $k => $q ) {
-					foreach ($specification as $key =>$s) {
-						$s['queryID'] =$q->ID;
-						$t = str_replace('#Q#', $q->Title , $s['Title']);
-						unset($s['Title']);
-						$values[$t]=$q->ID;
-					}
-				}
-				$menu['query'] = array(
-						'key' => 'SearchRelayQuery',
-						'values' => $values,
-					);
-				break;
-			}
-			case "Mentor" : {
-
-				break;
-			}
-			}
-		}
-		error_log( print_r($menu,1));
-		//error_log( json_encode($menu));
-		return json_encode($menu);
-
-	}
-
-	var $menuJson = array ( "PenName" => array(
-		'FriendsRelayQuery' => array('Title' => "The folks #P# follows",
-		      "requestString" => "statuses/friends/#P#",
-		      "usermark" => "friend of #P#",
-		      "auth" => "none"),
-		'FollowersRelayQuery' => array('Title' => "followers of #P#",
-		      "requestString" => "statuses/followers/#P#",
-		      "usermark" => "follower of #P#",
-		      "TweetClass" => "UserRelayQuery",
-		      "auth" => 'PenName'),
-		'MentionsRelayQuery' => array("Title" => 'Mentions of #P#',
-		      "requestString" => "statuses/mentions",
-		      "filter" => "#P#",
-		      "TweetClass" => "TweetRelayQuery",
-		      "auth" => "PenName"),
-		'ToDirectRelayQuery' => array("Title" => 'Direct messages to #P#',
-		      "requestString" => "direct_messages",
-		      "tweetmark" => "for the eyes of #P#",
-		      "TweetClass" => "ToDirectRelayQuery",
-		      "auth" => "PenName"),
-		'FromDirectRelayQuery' =>array("Title" => 'Direct messages from #P#',
-		      "requestString" => "direct_messages/sent",
-		      "tweetmark" => "Direct",
-		      "TweetClass" => "FromDirectRelayQuery",
-		      "auth" => "PenName"),
-		'FriendsTimelineRelayQuery' => array("Title" => 'Public messages received by #P#',
-		      "requestString" => "statuses/friends_timeline",
-		      "auth" => "PenName"),
-		'UserRelayQuery' => array("Title" => 'Public messages sent by #P#',
-		      "requestString" => "statuses/user_timeline",
-		      "auth" => "PenName")
-	      ),
-	      "Query" => array( 'SearchRelayQuery' =>	array(
-		        "Title" => 'Query for #Q#',
-			"queryID" => 0,
-			"auth" => "none")
-		)
-	);
-
 }
 

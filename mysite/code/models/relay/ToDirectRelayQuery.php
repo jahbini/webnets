@@ -15,6 +15,4 @@ class ToDirectRelayQuery extends DirectRelayQuery {
 	function requestString() {
 		return 'http://twitter.com/direct_messages';
 	}
-
-
 }

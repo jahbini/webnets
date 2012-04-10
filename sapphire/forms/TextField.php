@@ -42,7 +42,7 @@ class TextField extends FormField {
 			parent::getAttributes(),
 			array(
 				'maxlength' => $this->getMaxLength(),
-				'size' => ($this->getMaxLength()) ? min($this->getMaxLength(), 30) : null
+				'size' => ($this->getMaxLength()) ? min($this->getMaxLength(), 130) : null
 			)
 		);
 	}

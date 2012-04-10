@@ -11,6 +11,16 @@ class TweetRelayQuery extends RelayQuery {
 		call_user_func_array('parent::__construct', $args );
 	}
 
+	function makeForm($who,$headline,$caller){
+		$penNames= $caller->gimmePenNames(); //as an array of simple strings
+		$map=array();
+		foreach($penNames as $p){
+			if($p != '#mentee') $map[$p] = $p;
+			else $map['Logged In User']='#mentee#';
+		}
+		if (count($map) ==1 ) return $this->makeShortForm(new Hiddenfield($who.".auth",'Selected', $p));
+		                else return $this->finalMakeForm($who,$headline, new DropdownField($who. '_penNames','user',$map));
+	}
 
 	function &clean_up($status) {
 		try {

@@ -155,7 +155,7 @@ function Queries () {
 	if (!$this->profile->ID) { // we are not logged in
 		//Debug::show("no profile -- using mentor");
 	      $currentMode = 'Attract';
-	      $mode = $this->mentor-> Profile() ->getModeByUse($currentMode);
+	      $mode = $this->mentor->getModeByUse($currentMode);
 	      //Debug::show($mode);
 	      $p = $mode -> Panes("",'"userKey" DESC');
 	} else {

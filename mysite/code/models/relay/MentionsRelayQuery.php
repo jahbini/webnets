@@ -11,7 +11,6 @@ class MentionsRelayQuery extends TweetRelayQuery {
 		call_user_func_array('parent::__construct', $args );
 	}
 
-
 	function &clean_up($status) {
 		$ns =& parent::clean_up($status);
 		if ($status->following) $ns ->following = $this->forcePenName();

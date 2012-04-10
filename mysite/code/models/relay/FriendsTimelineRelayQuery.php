@@ -5,7 +5,6 @@ class FriendsTimelineRelayQuery extends TweetRelayQuery {
 		return $n ->fillQuery($params,$more);
 	}
 
-
 	function __construct() {
 		$args =func_get_args() ;
 		call_user_func_array('parent::__construct', $args );

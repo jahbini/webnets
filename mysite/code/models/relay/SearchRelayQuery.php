@@ -13,6 +13,15 @@ class SearchRelayQuery extends RelayQuery {
 		return $n ->fillQuery($params,$more);
 	}
 
+
+	function makeForm($who,$headline,$caller){
+		return $this->finalMakeForm($who,$headline,new FieldList(
+			new TextField('keywords','search keywords',null,100),
+			new TextField('negativeWords','words to avoid',null,40),
+			new Textfield('location','Airport code for location',null,5)
+		));
+	}
+
 	function __construct() {
 		$args =func_get_args() ;
 		call_user_func_array('parent::__construct', $args );
