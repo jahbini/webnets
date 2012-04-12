@@ -4,7 +4,7 @@ class MyCatalogAdmin extends ModelAdmin {
 
 	public static $managed_models = array(
 		'SubDomain'
-		,'Mentor'
+		,'Organizer'
 	);
 	public static $url_segment = 'SubDomain';
 	public static $menu_title = 'eGroups';

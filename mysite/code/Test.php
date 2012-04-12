@@ -92,7 +92,7 @@ print_r($r);
 function FillLocation () {
 	Location::get_codes();
 }
-function showMentor($data) {
+function showOrganizer($data) {
 	$name = $data->param('ID');
 	$user = TweetUser::getTweetUser($name);
 	$profile = $user->Profile();

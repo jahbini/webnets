@@ -169,7 +169,7 @@ class Tweet extends DataObject {
 		}
 
 		//error_log("API Tweet Looking for Tweet # $ID");
-		DB::query('LOCK TABLES "Mentor" WRITE, "BigTweet" WRITE, "Tweet" WRITE,"Tweet_SimpleTags" WRITE, "Tag" WRITE, "TweetUser" WRITE, "PenName" WRITE, "UsersPenName" WRITE');
+		DB::query('LOCK TABLES "Organizer" WRITE, "BigTweet" WRITE, "Tweet" WRITE,"Tweet_SimpleTags" WRITE, "Tag" WRITE, "TweetUser" WRITE, "PenName" WRITE, "UsersPenName" WRITE');
 		try{
 		$t = DataObject::get_one('Tweet','"StatusID"=\''. $StatusID. "'");
 		if (!$t ) {
@@ -204,7 +204,7 @@ class Tweet extends DataObject {
 		if (strlen($text) >140 ) {
 			return BigTweet::newTweet($text, $user, $extraTag);
 		}
-		DB::query('LOCK TABLES "Mentor" WRITE, "BigTweet" WRITE, "Tweet" WRITE,"Tweet_SimpleTags" WRITE, "Tag" WRITE, "TweetUser" WRITE, "PenName" WRITE, "UsersPenName" WRITE');
+		DB::query('LOCK TABLES "Organizer" WRITE, "BigTweet" WRITE, "Tweet" WRITE,"Tweet_SimpleTags" WRITE, "Tag" WRITE, "TweetUser" WRITE, "PenName" WRITE, "UsersPenName" WRITE');
 		try {
 		$idVal=$x['StatusID'];
 		$t = new Tweet($id);
@@ -245,7 +245,7 @@ class Tweet extends DataObject {
 
 		$x['StatusID']=$idVal;
 
-		DB::query('LOCK TABLES "Mentor" WRITE, "BigTweet" WRITE, "Tweet" WRITE,"Tweet_SimpleTags" WRITE, "Tag" WRITE, "TweetUser" WRITE, "PenName" WRITE, "UsersPenName" WRITE');
+		DB::query('LOCK TABLES "Organizer" WRITE, "BigTweet" WRITE, "Tweet" WRITE,"Tweet_SimpleTags" WRITE, "Tag" WRITE, "TweetUser" WRITE, "PenName" WRITE, "UsersPenName" WRITE');
 		try {
 		//error_log("getting existing Tweet");
 		$t = DataObject::get_one('Tweet','"StatusID"=\''. $idVal. "'");

@@ -55,14 +55,14 @@ class Cell176Page_Controller extends Page_Controller {
 	function index($data =false) {
 		global $Geo;
 		global $GeoShort;
-		$cat = $this->mentor->Profile()->getModeByUse('Attract');
+		$cat = $this->Organizer->Profile()->getModeByUse('Attract');
 		$panes = $cat->Panes();
 		$iterator = 1;
 		foreach($panes as $p) {
 		$p->Ord = $iterator;
 		$iterator +=1;
 		}
-		$data = array('Mentor' => $this->mentor, 'GeoShort'=> $GeoShort, 'Geo' => $Geo, 
+		$data = array('Organizer' => $this->Organizer, 'GeoShort'=> $GeoShort, 'Geo' => $Geo, 
 			'Categories' => $panes,'PageIdentifier'=>$this->profile->Name .' says:') ;
 	  	return $this->customise($data)->renderWith(array('Cell176Page','176Page'));
 	}
@@ -97,7 +97,7 @@ class Cell176Page_Controller extends Page_Controller {
 		$PaneID = $data->param('ID');
 		$pane = DataObject::get_by_id('Pane', $PaneID);
 
-		$cat = $this->mentor->Profile()->getModeByUse('Attract');
+		$cat = $this->Organizer->Profile()->getModeByUse('Attract');
 		$panes = $cat->Panes();
 		$iterator = 1;
 		foreach($panes as $p) {
@@ -130,7 +130,7 @@ class Cell176Page_Controller extends Page_Controller {
 
 		//$Tweets = DataObject::get('Tweet', "`author_name` ='$name' OR `Title` LIKE '@$name %'","published DESC","","$start,$limit");
 		//if ($Tweets)$Tweets -> setPageLength($limit);
-		$data = array('Mentor' => $this->mentor, 'GeoShort'=> $GeoShort, 'Geo' => $Geo, 'Categories' => $panes,
+		$data = array('Organizer' => $this->Organizer, 'GeoShort'=> $GeoShort, 'Geo' => $Geo, 'Categories' => $panes,
 		'RelayQueries' => $RelayQueryTweets, 'Names'=>$vNames, 'PageIdentifier' => 'hot id', 'Title' => 'Tweets from ' . $name ) ;
 	  	return $this->customise($data)->renderWith(array('176Page'));
 	}

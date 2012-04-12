@@ -2,43 +2,43 @@
 /* vim:ts=3:sts=3:sw=3:
 */
 class PaneDef {
-	protected  $mentor= false;
+	protected  $Organizer= false;
 	protected  $mentee= false;
 	protected  $mode;
 	protected  $modeName;
 
 	function setMode ($name) {
-		$this->mode = $this->mentor->getModeByUse($name);
+		$this->mode = $this->Organizer->getModeByUse($name);
 		$this->modeName = $name;
 	}
 
-	function setMentor(Mentor $m) {
-		$this -> mentor =$m;
+	function setOrganizer(Organizer $m) {
+		$this -> Organizer =$m;
 	}
 	function setMentee(PenName $p) {
 		$this -> mentee = $p;
 	}
 
-	/* go through all for mentor's "loggedIn" panes and 
+	/* go through all for Organizer's "loggedIn" panes and 
 	 * create new mentee panes that allow the mentee to use
-	 * the site in 'mentored' status (ie the mentee is NOT a real member)
-	 * and link in all the mentor's queries  (we will interpolate the pen name
+	 * the site in 'AttendingClub' status (ie the mentee is NOT a real member)
+	 * and link in all the Organizer's queries  (we will interpolate the pen name
 	 * at call time
 	 */
 	function shallowCopy() {
-		$toMode = $this->mentee ->getModeByUse('Mentored');
+		$toMode = $this->mentee ->getModeByUse('AttendingClub');
 		$to = $toMode->Panes();
-		$from = $this->mentor ->getModeByUse('LoggedIn')->Panes();
+		$from = $this->Organizer ->getModeByUse('LoggedIn')->Panes();
 
 		$to->removeAll();
-		// go through all for mentor's panes and create new mentee panes
+		// go through all for Organizer's panes and create new mentee panes
 		foreach ($from as $p) {
 			$np = new Pane();
 			$np -> userKey = $p -> userKey;
 			$np -> width = $p -> width;
 			$np -> write();
 			$nq = $np->Queries();  $pq = $p->Queries();
-			// go through all mentors Queries and link them into mentee's Queries
+			// go through all Organizers Queries and link them into mentee's Queries
 			foreach ($pq as $q) {
 				$nq ->add($q);
 			}
@@ -48,25 +48,25 @@ class PaneDef {
 	}
 
 
-	/* go through all for mentor's "loggedIn" panes and 
+	/* go through all for Organizer's "loggedIn" panes and 
 	 * create new mentee panes that allow the mentee to use
-	 * the site in 'mentored' status (ie the mentee is NOT a real member)
-	 * and link in all the mentor's queries  (we will interpolate the pen name
+	 * the site in 'AttendingClub' status (ie the mentee is NOT a real member)
+	 * and link in all the Organizer's queries  (we will interpolate the pen name
 	 * at call time
 	 */
 	function deepCopy() {
 		$toMode = $this->mentee->Profile() ->getModeByUse('LoggedIn');
 		$to = $toMode->Panes();
-		$from = $this->mentor->Profile() ->getModeByUse('mentored')->Panes();
+		$from = $this->Organizer->Profile() ->getModeByUse('AttendingClub')->Panes();
 
 		$to->removeAll();
-		// go through all for mentor's panes and create new mentee panes
+		// go through all for Organizer's panes and create new mentee panes
 		foreach ($from as $p) {
-			$np = $p->duplicate();  // duplicate the mentor's pane
+			$np = $p->duplicate();  // duplicate the Organizer's pane
 			$np -> write();
 			$to -> add($np);     // add it to the new user's panes
 			$nq = $np->Queries();  $pq = $p->Queries();
-			// go through all mentors Queries and link them into mentee's Queries
+			// go through all Organizers Queries and link them into mentee's Queries
 			foreach ($pq as $q) {
 				$npq=$q -> duplicate() ;
 				$npq->write();
@@ -81,11 +81,11 @@ class PaneDef {
 	 * create a set of panes as defined in 'standard pane queries'
 	 */
 	function standardPanes( $j ) {
-		//$this->mode = $this->mentor->Profile()->getModeByUse($name);
+		//$this->mode = $this->Organizer->Profile()->getModeByUse($name);
 		//$this->modeName = $name;
-		$mentor_screen_name=$this->mentor->screen_name;
+		$Organizer_screen_name=$this->Organizer->screen_name;
 
-		$modes = $this->mentor->Modes();
+		$modes = $this->Organizer->Modes();
 		$newModes = self::JsonToObject($j,$modes);
 		return $newModes;
 	}

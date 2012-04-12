@@ -75,16 +75,16 @@ class RelayPage_Controller extends Page_Controller {
 		   return('[{error:"no query"}]');
 	   }
 	   if($this->mentee) $relayQuery->setMentee($this->mentee);
-	   if($this->mentor) $relayQuery->setMentor($this->mentor);
+	   if($this->Organizer) $relayQuery->setOrganizer($this->Organizer);
 	   $p = DataObject::get_by_id('PenName', $relayQuery->PenNameID);
 
-	   $rQn = new rqNurse($relayQuery);
-	   if($this->mentor) $rQn->setMentor($this->mentor);
-	   if($this->mentee) $rQn->setMentee($this->mentee);
-	   $wait=$rQn->preSchedule();
+	   $nurse = new rqNurse($relayQuery);
+	   if($this->Organizer) $nurse->setOrganizer($this->Organizer);
+	   if($this->mentee) $nurse->setMentee($this->mentee);
+	   $wait=$nurse->preSchedule();
 	   $requestString = $relayQuery->requestString();
 
-	   $content = $rQn->get_from_cache();
+	   $content = $nurse->get_from_cache();
 	   if ($content || $wait) {
 		   // cache access was successful 90 seconds old is still OK
 	      return $callback . '({fromCache:'.($content?'true':'false' ).', since_id:' . ($this->since_id?$this->since_id:'false')
@@ -92,7 +92,7 @@ class RelayPage_Controller extends Page_Controller {
 		      . ',content:' .($content?$content:'[]') . '});';
 	   }
 
-	   $content = $rQn ->go_to_twitter($v);
+	   $content = $nurse ->go_to_twitter($v);
 
 	   $decoded = json_decode($content);
 
@@ -102,8 +102,8 @@ class RelayPage_Controller extends Page_Controller {
 	$new_content = $relayQuery-> clean_all($decoded);
 	error_reporting($o);
 	   // we may wish to keep track of highStatus if ($this->highStatus != 0 ) $this->since_id = $this->highStatus;
-	   $wait = $rQn-> postSchedule();
-	   $rQn->save_to_cache($content);
+	   $wait = $nurse-> postSchedule();
+	   $nurse->save_to_cache($content);
 
 	   $rv = $callback . '({fromCache:false, since_id:' 
 		   .  ($this->since_id?$this->since_id:'false') 

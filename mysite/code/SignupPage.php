@@ -41,7 +41,7 @@ function init() {
     $this->Content='';
    parent::init();
     global $userState;
-    if ($userState != 'mentored') {
+    if ($userState != 'AttendingClub') {
 	    Director::Redirect(BASE_URL);
     }
 }

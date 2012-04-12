@@ -2,7 +2,7 @@
 class Contest extends SearchRelayQuery {
 	static $db = array('StartTime' => 'Datetime' , 'CutOff' => 'Datetime');
 	static $has_many = array ('Votes' => 'Vote');
-	static $has_one = array('Mentor' => 'Mentor');
+	static $has_one = array('Organizer' => 'Organizer');
 
 	function processNewTweet(Tweet $t) {
 		/*
@@ -45,21 +45,21 @@ class Contest extends SearchRelayQuery {
 		if (!$m) return;
 
 		/* $match [0] whole match
-		 * $match[1] == mentor screen name (without @)
+		 * $match[1] == Organizer screen name (without @)
 		 * $match[2] == contest name (without vote4_)
 		 * $match[3] == cantidate (without @)
 		 * $match[4] == bar, drink, etc
 		 */
 
-		$mentor = DataObject::get_one('Mentor', 'screen_name=' . $match[1]);
-		if (! $mentor instanceOf Mentor) return;  // no mentor, no contest
+		$Organizer = DataObject::get_one('Organizer', 'screen_name=' . $match[1]);
+		if (! $Organizer instanceOf Organizer) return;  // no Organizer, no contest
 
 		$contests = DataObject::get('Contest', 'Title=' . $match[2] );
 		if (!$contests) return; // no Contest ID, no contest
 
 		$found = false;
 		foreach($contests as $contest) {
-			if ($contest -> MentorID == $mentor -> ID) {
+			if ($contest -> OrganizerID == $Organizer -> ID) {
 				$found = $contest;
 				break;
 			}

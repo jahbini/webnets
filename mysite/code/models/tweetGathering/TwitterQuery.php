@@ -6,7 +6,7 @@ class TwitterQuery extends DataObject {
 		,'HourIsUp' => 'Datetime'
 		,'requestString' =>'Varchar(100)' //the stuff after http://twitter.com/
 		,'requestKind' => "Enum('proxy,browser','proxy')"  //all requests can be done by proxy, (server) some can be done by browser
-		,'authority' => "Enum('none,penName,mentor,mentee,query','none')"  //used for interpolating the requestString or authority
+		,'authority' => "Enum('none,penName,Organizer,mentee,query','none')"  //used for interpolating the requestString or authority
 		,'query'=>'Varchar(100)'
 		,'lowestID' => 'Double'
 		,'highestID' => 'Double'
@@ -24,7 +24,7 @@ class TwitterQuery extends DataObject {
 			case "none": return false;
 			case "penName": if( $this->penNameID) return $this->penName()->screen_name;
 			case "mentee": if ($this->mentee) return $this->mentee->screen_name;
-			case "mentor": if ($this->mentor) return $this->mentor->screen_name;
+			case "Organizer": if ($this->Organizer) return $this->Organizer->screen_name;
 				error_log("no valid authorization for TwitterQuery ID=". $this->ID);
 				die();
 		}
@@ -139,7 +139,7 @@ class TwitterQuery extends DataObject {
 				return array (
 				'auth'=>false,
 				'penName' => $sn,
-				'service' => 'http://twitter.com/statuses/friends/'.$mentor->screen_name,
+				'service' => 'http://twitter.com/statuses/friends/'.$Organizer->screen_name,
 				'query' => '',
 				'filler' => 'fillTweetsFromAPI'
 				);
@@ -312,6 +312,7 @@ class TwitterQuery extends DataObject {
 
 	function setMobi($value) {
 		// mobi tags get thrown into the tweet acquisition system
+		if (!$this->ID) $this->write();
 		$this->setField('Mobi', $value);
 		if($value) $this->insureInitialGap();
 	}

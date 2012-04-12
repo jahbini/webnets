@@ -101,7 +101,7 @@ class ProfilePage_Controller extends TagWatch {
 		global $userState;
 		switch ($userState) {
 		   case 'anonymous':
-		      Page_Controller::sessionInfo('UserState',true,'mentored');
+		      Page_Controller::sessionInfo('UserState',true,'AttendingClub');
 		     // create a socialite reference a dummy profile, that has links to the Standard Queries
 		     $pro = DataObject::get_one('Profile','`Name`="'. $new_pen->screen_name  .'"' );
 		     if (!$pro) {
@@ -112,7 +112,7 @@ class ProfilePage_Controller extends TagWatch {
 		     $this->profile = $this->mentee = $pro;
 		      //  $this->standardPanes($new_pen); 
 		      // This socialite has NO panes, panes will be generated from 
-		      // mentor's panes on the fly
+		      // Organizer's panes on the fly
 		      //
 		     $new_pen -> ProfileID = $this->profile->ID;
 		     $new_pen -> write();
@@ -132,9 +132,9 @@ class ProfilePage_Controller extends TagWatch {
 
 		     if ($this->PenNames->count() == 0) {
 			// that is, this is the very, very first pen name for this account
-			     // generate the standard Panes for this user from the mentor
+			     // generate the standard Panes for this user from the Organizer
 			  $pd = new PaneDef();
-			  $pd -> setMentor($this->mentor);
+			  $pd -> setOrganizer($this->Organizer);
 			  $pd -> setMentee($new_pen);
 			  $pd -> deepCopy();
 		     }

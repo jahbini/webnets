@@ -7,13 +7,39 @@ class QueryPage extends SiteTree {
 	
 	public static $has_one = array(
 	);
+
+	 static $required=false;
+	function requireDefaultRecords(){
+		if(self::$required) return;
+		self::$required=true;
+		parent::requireDefaultRecords();
+		$pPage = DataObject::get_one("SiteTree", "URLSegment='gapstatus'");
+		if ($pPage instanceOF QueryPage) return;
+		if ($pPage instanceOF Page ) {
+			$pPage = $pPage -> newClassInstance('QueryPage');
+			$pPage -> write();
+		}
+		if (!$pPage) {
+			$pPage = new QueryPage();
+		}
+		$pPage -> CanViewType = 'LoggedInUsers';
+		$pPage -> ShowInSearch = false;
+		$pPage ->Title = "Query and Gap Status";
+		$pPage ->Content = "";
+		$pPage->URLSegment = "gapstatus";
+		$pPage->Status="Published";
+		$pPage->write();
+		$pPage->publish("Stage","Live");
+		$pPage->flushCache();
+		DB::alteration_message("Query and Gap Status Page installed");
+	}
 	
 }
 
 class QueryPage_Controller extends ContentController {
 	
 	public function init() {
-		$self->requiresTweetAction = false;
+		$this->requiresTweetAction = false;
 		parent::init();
 		if (!Permission::check('ADMIN')) {
 			Director::redirect(BASE_URL);
@@ -123,6 +149,7 @@ JS
 		Director::set_environment_type('dev');
 		$start = ($this->request->requestVar('start')) ? (int)$this->request->requestVar('start'):0;
 		$queries=DataObject::get('TwitterQuery',"","Title","","$start,25");
+		$queries = new PaginatedList($queries);
 		if($queries) $queries -> setPageLength(25);
 		$data = array('Queries' => $queries,  'Title' => 'The list of Active Queries to Twitter') ;
 	  	return $this->customise($data)->renderWith(array( 'Query_results','Page'));

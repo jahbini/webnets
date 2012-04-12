@@ -79,30 +79,7 @@ CONTENT;
 	   $home->publish("Stage","Live");
 	   $home->flushCache();
 
-	   $myPage = DataObject::get_one("SiteTree", "URLSegment='myPage'");
-	   if ($myPage instanceOF GraphPage) return;
-	   if ($myPage instanceOF Page ) {
-		   $myPage = $myPage -> newClassInstance('GraphPage');
-		   $myPage -> write();
-	   }
-
-	   if (!$myPage) {
-		   $myPage = new GraphPage();
-	   }
-
-	   $myPage ->Title = "My Page";
-	   $myPage ->MetaTitle = "Social event of the Season";
-	   $home ->MetaKeywords = "twitter,social networking,gossip,talk to frineds";
-	   $myPage -> CanViewType = 'LoggedInUsers';
-	   $myPage -> ShowInSearch = false;
-
-	   $myPage->URLSegment = "my-page";
-	   $myPage->Status="Published";
-	   $myPage->write();
-	   $myPage->publish("Stage","Live");
-	   $myPage->flushCache();
-
-	   DB::alteration_message("Graph Page installed");
+	   DB::alteration_message("Home Page installed");  
    }
 
 }
@@ -153,27 +130,28 @@ function Queries () {
 		. "</form>" . "</div>";
 	$currentMode = 'LoggedIn';
 	if (!$this->profile->ID) { // we are not logged in
-		//Debug::show("no profile -- using mentor");
+		//Debug::show("no profile -- using Organizer");
 	      $currentMode = 'Attract';
-	      $mode = $this->mentor->getModeByUse($currentMode);
+	      $mode = $this->Organizer->getModeByUse($currentMode);
 	      //Debug::show($mode);
 	      $p = $mode -> Panes("",'"userKey" DESC');
 	} else {
-	      $p = $this->profile-> getModeByUse('LoggedIn') -> Panes("",'"userKey" DESC');
+	      $p = $this->Organizer-> getModeByUse('LoggedIn') -> Panes("",'"userKey" DESC');
 //Debug::show($this->profile);
 	  }	
 	if (! $p->exists() ){
-	//   Debug::show($this->mentor);
-	   $p = $this->mentor -> Profile();
+	//   Debug::show($this->Organizer);
+	   $p = $this->Organizer -> Profile();
 	   //Debug::show($p);
 	   if (!$p->ID) $p->write();
-	   $p =  $p-> getModeByUse('mentored');
+	   //$p =  $p-> getModeByUse('AttendingClub');
+	   $p = $this->Organizer->getModeByUse('AttendingClub');
 	   //Debug::show($p);
 	   if (! $p->ID) $p ->write();
 	   //Debug::show($p);
 	   $p= $p -> Panes("",'"userKey" ASC');
 	   //Debug::show($p);
-	//	return "<h1> Please visit your Profile Page and design your Queries Display " . $this->mentor->name ." </h1>";
+	//	return "<h1> Please visit your Profile Page and design your Queries Display " . $this->Organizer->name ." </h1>";
 
 	}
 	$count=1;
@@ -184,7 +162,7 @@ function Queries () {
 		//$v = $pane->Queries();
 		 $queries= $pane->Queries();
 		foreach ($queries as $q) {
-		       if($this->mentor) $q ->setMentor($this->mentor);
+		       if($this->Organizer) $q ->setOrganizer($this->Organizer);
 		       if($this->mentee) $q ->setMentee($this->mentee);
 			//error_log("Visible ID = ". $q->ID . " request " . $q->requestString());
 			if ($who = $q->authorization()){
@@ -239,7 +217,7 @@ private function divContents($divname,$Title,$sticks,$visuals) {
 		foreach ($oldTests as $t) $t ->delete();
 		$t = new Contest();
 		$t -> Title = 'Test Contest - bartender';
-		$t -> MentorID = 1;
+		$t -> OrganizerID = 1;
 		$t -> CutOff = "2009-10-23 00:00:00";
 		$t -> StartTime = "2009-10-13 00:00:00";
 		$t -> location = "hnl";

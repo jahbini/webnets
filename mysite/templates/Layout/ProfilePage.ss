@@ -15,9 +15,9 @@ $form
 <ol>
 <% control Profile.PenNames %>
 <li> $Title
-<% if $ClassName==Mentor %>
-- Mentor for SubDomain $SubDomain
-<a href='http://<% if $SubDomain!=all %>$SubDomain.<% end_if %>webnets/$URLSegment/panelayout/allModes/$ID' > edit </a>
+<% if $ClassName==Organizer %>
+- Organizer for SubDomain $SubDomain
+<a href='http://<% if $SubDomain!=all %>$SubDomain.<% end_if %>webnets/$URLSegment/Organizer?Organizer=$ID' > edit </a>
 <% end_if %>
 </li>
 <% end_control %>

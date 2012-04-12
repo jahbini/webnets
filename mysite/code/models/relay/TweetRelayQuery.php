@@ -18,8 +18,8 @@ class TweetRelayQuery extends RelayQuery {
 			if($p != '#mentee') $map[$p] = $p;
 			else $map['Logged In User']='#mentee#';
 		}
-		if (count($map) ==1 ) return $this->makeShortForm(new Hiddenfield($who.".auth",'Selected', $p));
-		                else return $this->finalMakeForm($who,$headline, new DropdownField($who. '_penNames','user',$map));
+		if (count($map) ==1 ) return $this->makeShortForm(new Hiddenfield($who."_auth",'Selected', $p));
+		                else return $this->finalMakeForm($who,$headline, new DropdownField($who. '_auth','user',$map));
 	}
 
 	function &clean_up($status) {

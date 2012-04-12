@@ -9,10 +9,12 @@ class rqNurse {
 	var $fail = false;
 	var $err = '';
 	var $channel = false; // the twitter oAuth channel
-	var $mentor = false;
+	var $Organizer = false;
 	var $mentee = false;
-	function __construct($rQ) {
+	var $range = false; // for logging the request and any errors
+	function __construct($rQ,$r=false) {
 		$this->relayQuery =& $rQ;
+		$this->range = $r;
 		$this ->penName = DataObject::get_by_id('PenName', $rQ->PenNameID);
 		   if(! $this->penName instanceOf PenName ) {
 				$this->scheduler= IPScheduler::get_IPscheduler();
@@ -21,8 +23,8 @@ class rqNurse {
 		   }
 	}
 
-	function setMentor($m) {
-		$this->mentor =& $m;
+	function setOrganizer($m) {
+		$this->Organizer =& $m;
 	}
 
 	function setMentee($m) {
@@ -63,7 +65,7 @@ class rqNurse {
 	   global $consumer_key;
 	   global $consumer_secret;
 	   $w = $this->relayQuery->requestString();
-	   if($this->mentor) $w=str_replace('mentor',$this->mentor->screen_name,$w);
+	   if($this->Organizer) $w=str_replace('Organizer',$this->Organizer->screen_name,$w);
 	   if($this->mentee) $w=str_replace('mentee',$this->mentee->screen_name,$w);
 	   if ( !$this->relayQuery->Authenticate() ) {
 		   $this->channel = new SaneRest($w. '.json' );
@@ -76,7 +78,7 @@ class rqNurse {
 		   $content = $this->channel->OAuthRequest($w . '.json', $this->relayQuery->requestParams($params),'GET');
 		//error_log(print_r($this-> channel -> responseHeaders(),1));
 	   }
-
+		if ($this->range) $range->setRequest($this->channel-getAbsoluteURL(),$params);
 	   if(!$content && $cacheOK ) {
 		   $content = $this->get_from_cache(360);   // get anything up to five minutes old
 	   }
@@ -96,9 +98,9 @@ class TweetRange {
 	var $request;
 	var $reschedule;
 	function __construct() {
-		$this->lowestID=1.0e20;
-		$this->highestID=0;
-		$this->stopperID=0;
+		$this->lowestID='100000000000000000000';
+		$this->highestID='0';
+		$this->stopperID='0';
 		$this->accepted_tweets =0;
 		$this->stopped=false;
 		$this->request_failed=true;
@@ -175,10 +177,10 @@ class TweetRange {
 		$this->request_failed=false;
 		$tID=$tweet->StatusID;
 		if (!$tID || $tID===0 ) return;
-		if ($this->lowestID > $tID) $this->lowestID = $tID;
-		if ($this->highestID < $tID) $this->highestID = $tID;
+		if (bccomp($this->lowestID , $tID) > 0) $this->lowestID = $tID;
+		if (bccomp($this->highestID, $tID) < 0 ) $this->highestID = $tID;
 		//error_log("Range Low=" .$this->lowestID . ", High=" .$this->highestID . ", Tweet=". $tID);
-		if($this->stopped = ($this->stopperID >= $tID)) return true;
+		if($this->stopped = (bccomp( $this->stopperID, $tID)>=0)) return true;
 		$this->accepted_tweets += 1;
 		return false;
 	}
@@ -210,6 +212,7 @@ class SaneRest extends ViewableData {
 	protected $responseBody;
 	protected $params;
 	protected $response;
+	protected $ActualURL;
 	
 	function getBody() {
 		return $this->responseBody;
@@ -224,6 +227,7 @@ class SaneRest extends ViewableData {
 		$this ->responseHeader = array();
 		$this ->params = array();
 		$this ->response = false;
+		$this ->ActualURL='';
 	}
 
 	function theResponse() {
@@ -233,7 +237,7 @@ class SaneRest extends ViewableData {
 		$this->response = false;
 	}
 	function toString(){
-		return "error in saneResponse for ". $this->queryString;
+		return "error in saneResponse for ". $this->ActualURL;
 	}
 
 	
@@ -251,16 +255,7 @@ class SaneRest extends ViewableData {
 		global $consumer_key;
 		global $consumer_secret;
 		if($this->response) return $this->response;
-		$url = $this->baseURL . $subURL; // Url for the request
-		if($this->queryString) {
-			if(strpos($url, '?') !== false) {
-				$url .= '&' . $this->queryString;
-			} else {
-				$url .= '?' . $this->queryString;
-			}
-		}
-
-		$url = str_replace(' ', '%20', $url); // Encode spaces
+		$url= $this->getAbsoluteURL($subURL);
 		$method = strtoupper($method);
 
 		if ($this->auth_token) {
@@ -273,6 +268,20 @@ class SaneRest extends ViewableData {
 
 			$this->response = new RestfulService_Response($this->responseBody, $r->lastStatusCode());
 			return $this->response;
+		}
+
+		function getAbsoluteUrl($subURL){
+		$url = $this->baseURL . $subURL; // Url for the request
+		if($this->queryString) {
+			if(strpos($url, '?') !== false) {
+				$url .= '&' . $this->queryString;
+			} else {
+				$url .= '?' . $this->queryString;
+			}
+		}
+
+		$this->ActualURL= str_replace(' ', '%20', $url); // Encode spaces
+		return $this->ActualURL;
 		}
 		
 		assert(in_array($method, array('GET','POST','PUT','DELETE','HEAD','OPTIONS')));
@@ -289,7 +298,7 @@ class SaneRest extends ViewableData {
 		curl_setopt($ch, CURLOPT_FOLLOWLOCATION,1);
 		curl_setopt($ch, CURLOPT_CUSTOMREQUEST, $method);
 		
-		error_log("G E T T I N G   F R O M    unauthorized curl - $url, method = $method, agent=$useragent"); 
+		error_log("G E T T I N G   F R O M  curl (no auth req)- $url, method = $method, agent=$useragent"); 
 	// Add headers
 		if($this->customHeaders) {
 			$headers = array_merge((array)$this->customHeaders, (array)$headers);

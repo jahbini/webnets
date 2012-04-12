@@ -11,6 +11,12 @@ class MentionsRelayQuery extends TweetRelayQuery {
 		call_user_func_array('parent::__construct', $args );
 	}
 
+	function setMentionsRelayQuery_auth($value){
+		Debug::show($value);
+		$p=DataObject::get_one('PenName','"screen_name"=\'' . $value . "'");
+		$this->PenNameID=$p->ID;
+	}
+
 	function &clean_up($status) {
 		$ns =& parent::clean_up($status);
 		if ($status->following) $ns ->following = $this->forcePenName();

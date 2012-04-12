@@ -86,21 +86,21 @@ class Tell140Page_Controller extends Page_Controller {
 	var $profile = false;
 	var $member = false;
 	var $subDomain;
-	var $mentor;
+	var $Organizer;
 
 	protected function interpolate($string) {
-		return str_replace(array("#mentor#", "#mentee#") , array($this->mentor->screen_name, ($this->mentee?$this->mentee->screen_name:'unknown') ) , $string);
+		return str_replace(array("#Organizer#", "#mentee#") , array($this->Organizer->screen_name, ($this->mentee?$this->mentee->screen_name:'unknown') ) , $string);
 	}
    function init() {
       error_log("Page controller init");
 	   parent::init();
-	   global $MentorLocation;
+	   global $OrganizerLocation;
 	   global $WantedSubDomain;
-	   Mentor::setMentorLocation($MentorLocation);
+	   Organizer::setOrganizerLocation($OrganizerLocation);
 	   error_log("wanted SubDomain = $WantedSubDomain");
 	   $this -> subDomain= DataObject::get_one('SubDomain','"Title"=\''.$WantedSubDomain."'");
-	   $this->mentor = $this->subDomain->Organizer();
-	   error_log("Mentor is " . $this->mentor->screen_name);
+	   $this->Organizer = $this->subDomain->Organizer();
+	   error_log("Organizer is " . $this->Organizer->screen_name);
 	   global $userState;
 	   $this->RequestedTweet = false;
 	   if(isset( $_REQUEST['s'] ) ) {
@@ -125,13 +125,13 @@ class Tell140Page_Controller extends Page_Controller {
 		$this->profile->Name = "unknown user";
 	       	error_log("State = anonymous, Got Socialite profile id = NULL" );
 		break;
-	   case 'mentored':
+	   case 'AttendingClub':
 		   $menteeID = Session::get('socialiteProfileID');
 		   $this->profile = DataObject::get_by_id('Profile',$menteeID); 
 		   $this->mentee = TweetUser::getTweetUser($this->profile->Name);
 		   if ( ! $this->profile->MemberID) {
 			   // the user does NOT have an existing account with us
-			   error_log("State = mentored, Got Socialite profile id = " . $menteeID . " " . $this->mentee->screen_name );
+			   error_log("State = AttendingClub, Got Socialite profile id = " . $menteeID . " " . $this->mentee->screen_name );
 			   break;
 		   }
 		   $member = DataObject::get_by_id('Member', $this->profile->MemberID);
@@ -187,6 +187,7 @@ class Tell140Page_Controller extends Page_Controller {
 	       Requirements::javascript('mysite/javascript/jquery-1.3.2.js');
 	      Requirements::block(THIRDPARTY_DIR. '/jquery/jquery.js');
 	      Requirements::javascript(THIRDPARTY_DIR . '/jquery/plugins/form/jquery.form.js');
+		Requirements::css('mysite/css/typography.css');
 	      if($this->requiresTabAction){
 		   Requirements::javascript('mysite/javascript/tools.tabs-1.0.1.js');
 		      View::wrapJava('$("ul.tabs").tabs("div.panes > div");');
@@ -316,7 +317,7 @@ class Tell140Page_Controller extends Page_Controller {
 	   switch ($userState) {
 	      default:
 	      case 'anonymous':
-		    $name = $this->mentor->Salutation;
+		    $name = $this->Organizer->Salutation;
 		     $form=  "Hello $name, have we met?"
 		  ."  <a href='" . Director::baseURL() 
 		  ."Security/login" . "'>Login?</a>";
@@ -328,7 +329,7 @@ class Tell140Page_Controller extends Page_Controller {
 		     . "'>Your Profile</a>|<a href='".Director::baseURL()
 		     .'home/logout' ."'>Logout.</a>";
 		 break;
-	      case 'mentored':
+	      case 'AttendingClub':
 		  $name = $this->profile->Name;
 		  $form=  "Hello $name, would you like to <a href='"
 		     . Director::baseURL() . "sign-up'>Sign up</a>"

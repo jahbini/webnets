@@ -1,11 +1,11 @@
 <?php
 
 class RelayQuery extends TwitterQuery {
-	// static $has_one=array('Profile'=> 'Profile','Mentor'=>'Mentor');  // Mentor is the sponsor, maitre de, and majordomo for the page
+	// static $has_one=array('Profile'=> 'Profile','Organizer'=>'Organizer');  // Organizer is the sponsor, maitre de, and majordomo for the page
 	static $defaults = array("requestKind" => "proxy", "authority" => "penName") ;
 	static $has_one=array('Pane' => 'Pane');
 	protected $mentee = false;
-	protected $mentor = false;
+	protected $Organizer = false;
 	protected $authenticator = false;
 
 	function __construct() {
@@ -17,7 +17,7 @@ class RelayQuery extends TwitterQuery {
 
 	function finalMakeForm($who,$headline,$fields){
 		$group = new FieldGroup();
-		$group ->setName($who.'.FG');
+		$group ->setName($who);
 		$group->setTitle($headline);
 		foreach ($fields as $arg) { $group->push($arg); }
 		return  $group ;
@@ -25,6 +25,8 @@ class RelayQuery extends TwitterQuery {
 	function makeShortForm($fields){
 		// for hidden fields
 		$group = new FieldGroup();
+		$group->setTitle('');
+		$group ->setName($this->ClassName);
 		foreach ($fields as $arg) { $group->push($arg); }
 		return  $group ;
 	}
@@ -38,8 +40,8 @@ class RelayQuery extends TwitterQuery {
 		$this->mentee = $m;
 	}
 
-	function setMentor ($m) {
-		$this->mentor = $m;
+	function setOrganizer ($m) {
+		$this->Organizer = $m;
 	}
 
 	function forcePenName() {
@@ -60,8 +62,8 @@ class RelayQuery extends TwitterQuery {
 					$q=$q->screen_name;
 				}
 				break;
-			case 'mentor': $q=$this->mentor->screen_name;
-					$this ->authenticator = $this->mentor;
+			case 'Organizer': $q=$this->Organizer->screen_name;
+					$this ->authenticator = $this->Organizer;
 				break;
 			case 'mentee': $q=$this->mentee->screen_name;
 					$this ->authenticator = $this->mentee;
@@ -85,8 +87,8 @@ class RelayQuery extends TwitterQuery {
 		if ($this->mentee) {
 			$s = str_replace('#mentee#',$this->mentee->screen_name, $s);
 		}
-		if ($this->mentor) {
-			$s = str_replace('#mentor#',$this->mentor->screen_name, $s);
+		if ($this->Organizer) {
+			$s = str_replace('#Organizer#',$this->Organizer->screen_name, $s);
 		}
 		return "http://twitter.com/" . $s;
 	}
@@ -103,8 +105,8 @@ class RelayQuery extends TwitterQuery {
 	 * grab tweets for all authenticated twitter requests
 	 */
 	function grabMoreTweets($param=array() ) {
-		$this -> nurse = new rqNurse($this);
 		$range = $this->range;
+		$this -> nurse = new rqNurse($this,$range);
 		$range->reschedule = $this->nurse->preSchedule();
 		if($range->reschedule > 30 ) return $range;
 		$q= $this->requestString();

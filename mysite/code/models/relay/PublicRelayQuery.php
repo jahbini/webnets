@@ -15,7 +15,7 @@ class PublicRelayQuery extends RelayQuery {
 		$this->authority='none';
 	}
 
-	function makeForm($who,$headline $penNames=null){
+	function makeForm($who,$headline, $penNames=null){
 		if (!$penNames ) $penNames=array($this->forcePenName());
 		$map=array();
 		foreach($penNames as $p){

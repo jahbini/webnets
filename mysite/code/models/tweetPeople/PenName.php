@@ -19,7 +19,7 @@ class PenName extends TweetUser {
    /*
     * Get or Create a Mode by the intended Use: LoggedIn, Attract or
     * whatever.  The mode is used to display the proper set of 
-    * panes on the display for the Mentor of the site
+    * panes on the display for the Organizer of the site
     */
    function getModeByUse($use) {
 	   $set = $this->Modes("`Use`='$use'");

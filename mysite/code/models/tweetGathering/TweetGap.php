@@ -1,6 +1,14 @@
 <?php
 class TweetGap extends DataObject {
-	static $db=array("gapKind"=>"Enum('low,initial,mid,top','initial')", 'gapBottom'=>'Double', 'currentTop'=>'Double', 'gapTop'=>'Double','statusMsg'=>'Text','failed' => "Enum('no,warn,yes','yes')",'TimeOffset' => 'Int');
+	static $db=array(
+		"gapKind"=>"Enum('low,initial,mid,top','initial')",
+		'gapBottom'=>'Varchar(20)',
+		'currentTop'=>'Varchar(20)',
+		'gapTop'=>'Varchar(20)',
+		'statusMsg'=>'Text',
+		'failed' => "Enum('no,warn,yes','yes')",
+		'TimeOffset' => 'Int'
+	);
 	static $defaults = array ('TimeOffset' => 3600 );  // one hour
 	static $has_one=array('TwitterQuery'=>'TwitterQuery');
 	
@@ -12,17 +20,17 @@ class TweetGap extends DataObject {
 	}
 
 	function bottom () {
-			if ($this->gapBottom  > 1.0e12 ) return "badly formed";
+			if (bccomp($this->gapBottom ,  '1000000000000') >=0 ) return "badly formed";
 		return number_format($this->gapBottom);
 	}
 
 	function current () {
-		if ($this->currentTop >1.0e12) return "unlimited";
+		if (bccomp($this->currentTop,'1000000000000') >=0 ) return "unlimited";
 		return number_format($this->currentTop);
 	}
 
 	function topOfGap () {
-		if ($this->gapTop >1.0e12) return "unlimited";
+		if (bccomp($this->gapTop,'1000000000000')>=0 ) return "unlimited";
 		return number_format($this->gapTop);
 	}
 	function sooner ($limit = 300) {
@@ -69,7 +77,7 @@ class TweetGap extends DataObject {
 		$floor = $this->gapBottom;
 		$this->setField('gapBottom',$newHi);
 		$this->setField('currentTop',$newHi);
-		$this->setField('gapTop',PHP_INT_MAX);
+		$this->setField('gapTop','1000000000000');
 		//otherwise create a Gap and fill it
 		if( ! $range->stopped ) {
 			$this->setStat("new high Tweets, and range did not stop --  create mid gap");
@@ -220,7 +228,7 @@ $this->setStat("Mid Gap Tweets below " . $this->current() .", my parent ID = {$p
 
 	function setAsTopGap($parent,$top){
 		$this-> setField('gapKind', 'top');
-		$this-> setField('gapTop',PHP_INT_MAX);
+		$this-> setField('gapTop','1000000000000');
 		$this-> setField('currentTop',$top);
 		$this-> setField('gapBottom',$top);
 		$this-> write();

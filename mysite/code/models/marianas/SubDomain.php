@@ -7,7 +7,7 @@ class SubDomain extends DataObject {
 		, 'Content' =>'HTMLText'
 	);
 
-	public static $has_one = array( 'Organizer' => 'Mentor'
+	public static $has_one = array( 'Organizer' => 'Organizer'
 	);
         static $required=false;
 	        
@@ -19,7 +19,7 @@ class SubDomain extends DataObject {
 	         if(self::$required ) return;
 	         self::$required=true;
 		 /* insure that ModernMarianas has been created */
-		 $m= new Mentor();
+		 $m= new Organizer();
 		 $m-> requireDefaultRecords();
 
 		 $all = niceData::getOne('SubDomain','Title','all');
@@ -28,7 +28,7 @@ class SubDomain extends DataObject {
 		 $all -> Title = "all";
 		 $all -> HeadLine = "Modern Marianas";
 		 $all -> Slogan = "Change me now!";
-		$o = niceData::getOne('Mentor','screen_name','ModernMarianas');
+		$o = niceData::getOne('Organizer','screen_name','ModernMarianas');
 		 $all->OrganizerID = $o->ID;
 		 $all ->write();
 		return;

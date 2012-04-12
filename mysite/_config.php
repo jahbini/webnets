@@ -43,8 +43,8 @@ global $consumer_secret;
 // strip off the trailing .com or .mobi -- 
   $comMobi= array_pop($names);
 
-  global $MentorLocation;
-  $MentorLocation = 'en';
+  global $OrganizerLocation;
+  $OrganizerLocation = 'en';
   global $WantedSubDomain;
 
 global $WantedSubDomain;
@@ -106,3 +106,22 @@ function _w($msg) {user_error($msg,E_USER_WARNING);}
 define('RELAY_HOST', 'webnets');
 define('ANALYTICS', false);  //only enable google analytics when site is live
 Director::set_environment_type("dev");
+
+function setLocalItem($key,$item){
+      global $locals;
+	 $locals[$key] = $item;
+	 return $item;
+}
+
+function getFromCacheOrURL($what,$fetch=true){
+      global $locals;
+ if(isset($locals[$what]) ) return $locals[$what];
+ if(isset($_REQUEST[$what] )) {
+    $value = $_REQUEST[$what];
+    if ($fetch) $value = DataObject::get_by_id($what,$value);
+    $locals[$what]=$value;
+    return $value;
+ }
+ return false;
+}
+

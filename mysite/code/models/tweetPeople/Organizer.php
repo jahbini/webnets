@@ -1,18 +1,18 @@
 <?php
 /* vi:sts=3:sw=3:ts=3:filetype=php:
  */
-//class MentorNames extends ModelAdmin {
+//class OrganizerNames extends ModelAdmin {
 //   
 //  public static $managed_models = array(
-//      'Mentor'
+//      'Organizer'
 //   );
 // 
-//  static $url_segment = 'Mentors'; // will be linked as /admin/products
-//  static $menu_title = 'edit Mentors';
+//  static $url_segment = 'Organizers'; // will be linked as /admin/products
+//  static $menu_title = 'edit Organizers';
 // 
 //}
 
-class Mentor extends UsersPenName {
+class Organizer extends UsersPenName {
 	// a birds of a feather collector
 	static $db = array ('GeoLocation'=>'Varchar','Salutation' => 'Varchar','Interaction'=> 'Boolean', 'TwitterName' => 'Varchar' , 'FaceBookName' => 'Varchar');
 	static $has_many = array('Contests' => 'Contest');
@@ -20,23 +20,23 @@ class Mentor extends UsersPenName {
 
 	static $indexes = array ('GeoLocation' => true);
 	
-	protected static $mentor_location = "";
+	protected static $Organizer_location = "";
   function getCMSFields(){              
 	 $fields = parent::getCMSFields();
 	 return formUtility::removeFields($fields,array('Interaction'));
 	}
-	static function setMentorLocation($location) {
+	static function setOrganizerLocation($location) {
 		if(strlen($location) == 2) {
 			//$location = 'lang:' . $location;
 			// ToDo set the i18n system for an alternate language!!!
 		}
-		Mentor::$mentor_location = $location;
+		Organizer::$Organizer_location = $location;
 	}
 
    /*
     * Get or Create a Mode by the intended Use: LoggedIn, Attract or
     * whatever.  The mode is used to display the proper set of 
-    * panes on the display for the Mentor of the site
+    * panes on the display for the Organizer of the site
     */
    function getModeByUse($use) {
 	   $set = $this->Modes("`Use`='$use'");
@@ -51,30 +51,30 @@ class Mentor extends UsersPenName {
 
 
 	protected static $m = false;
-	static function getMentor(){
-		global $MentorName;
-		if($MentorName) {
-			Mentor::$m = DataObject::get_one('Mentor', "screen_name='$MentorName'" );
+	static function getOrganizer(){
+		global $OrganizerName;
+		if($OrganizerName) {
+			Organizer::$m = DataObject::get_one('Organizer', "screen_name='$OrganizerName'" );
 		}
-		if(!Mentor::$m) {
-			$m = DataObject::get_one('Mentor', "`GeoLocation` LIKE'%|" . Mentor::$mentor_location . "|%'" );
-			if (!$m) $m = DataObject::get_one('Mentor', "`GeoLocation` LIKE'%|lang:en|%'" );
-			Mentor::$m = $m;
+		if(!Organizer::$m) {
+			$m = DataObject::get_one('Organizer', "`GeoLocation` LIKE'%|" . Organizer::$Organizer_location . "|%'" );
+			if (!$m) $m = DataObject::get_one('Organizer', "`GeoLocation` LIKE'%|lang:en|%'" );
+			Organizer::$m = $m;
 		}
-		return Mentor::$m;
+		return Organizer::$m;
 	}
 
 	static $required=false;
 
 	function requireDefaultRecords() {
-		error_log("Require Mentor Records");
+		error_log("Require Organizer Records");
 		if(self::$required ) return;
 		self::$required=true;	
 		/* insure that jahbini has his profile */
 		$p = new Profile();
 		$p->requireDefaultRecords();
 
-	$mentorDef = array (
+	$OrganizerDef = array (
 	'ModernMarianas' => array( 'Salutation' => 'Islander!', 'Location'=>'Saipan,Tinian,Rota','Interaction' => true
 	    ,'ProfileName' => 'jahbini'
 		,'modes' => <<<JSON
@@ -84,13 +84,13 @@ class Mentor extends UsersPenName {
 	{ClassName: "Pane", userKey: "Places", width: 3, 
 		Queries: [
 		{ClassName: "SearchRelayQuery",Mobi:true, Title: "CNMI Buzz", keywords: "Saipan,Rota,Tinian,Article12", location:"spn" },
-		{ClassName: "FriendsRelayQuery",query:"#mentor#",authority:"mentor", Title: "Friends of #mentor#"},
+		{ClassName: "FriendsRelayQuery",query:"#Organizer#",authority:"Organizer", Title: "Friends of #Organizer#"},
 		{ClassName: "SearchRelayQuery",Mobi:true, Title: "Saipan Places", keywords: "laulau,laulau beach",negativeWords:"BA,london", location:"spn" },
 		{ClassName: "SearchRelayQuery",Mobi:true, Title: "OutOfTown", keywords:"San Vicente",negativeWords:"BA,london", location:"spn" }
 	]}
 	]},
 
-{ClassName:"Mode", Use:"mentored",PenNameID: #PID#, Panes:[
+{ClassName:"Mode", Use:"AttendingClub",PenNameID: #PID#, Panes:[
 	{ClassName: "Pane", userKey: "Places", width: 3, 
 		Queries: [
 		{ClassName: "SearchRelayQuery",Mobi:true, Title: "CNMI Buzz", keywords: "Saipan,Rota,Tinian,Article12", location:"spn" },
@@ -108,7 +108,7 @@ JSON
 		 * -       Queries: {ClassName: "FriendsRelayQuery",query:"Arleen", authority:"query", Title: "Friends of Arleen" }},
 		 * -    {ClassName: "Pane", userKey: "Quotables", width: 4,
 		 * -       Queries: {
-		 * ClassName: "FriendsRelayQuery",query:"#mentor#",authority:"mentor", Title: "Friends of #mentor#"
+		 * ClassName: "FriendsRelayQuery",query:"#Organizer#",authority:"Organizer", Title: "Friends of #Organizer#"
 		 * }},
 		 * -    {RefName: "VIP", ClassName: "Pane", userKey: "VIPs", width: 5,
 		 * -       Queries: {RefName:"beelzebub_friends",ClassName: "FriendsRelayQuery", query: "be_elzebub", authority:"query",  Title: "Friends of Be_elzebub" }}]
@@ -141,7 +141,7 @@ JSON
 
 		$memberID=array();
 		$profileID=array();
-		$mentorID=array();
+		$OrganizerID=array();
 		//include_once("utility/PaneDef.php");
 		/*
 		 * Mentee is no longer needed as a real tweetuser
@@ -152,13 +152,13 @@ JSON
 			$mentee -> write();
 		}
 		 */
-		foreach ($mentorDef as $name => $values) {
+		foreach ($OrganizerDef as $name => $values) {
 			error_log("creating records for $name");
 			$b = TweetUser::getTweetUser($name);
-			if($b instanceOf Mentor ) continue;  //been here done that
+			if($b instanceOf Organizer ) continue;  //been here done that
 			error_log("Continuing to create records for $name");
 
-			$be= $b->newClassInstance('Mentor');
+			$be= $b->newClassInstance('Organizer');
 			$b ->destroy();
 			$b = $be;
 

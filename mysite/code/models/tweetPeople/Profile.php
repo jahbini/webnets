@@ -68,7 +68,7 @@ class Profile extends DataObject implements PermissionProvider {
 	    ,'REGISTERED_USER' => "Regular fron Panel administration"
 	    ,'POWER_USER' => "Extended permissions"
 	    ,'ROBOT' => "Can create automated messages"
-	    ,'MENTOR' => "Sponsors a specific forumand hosts contests"
+	    ,'ORGANIZER' => "Sponsors a specific forumand hosts contests"
 	    ,'FRIEND_OF_MOM' => "Appears on Moms front page"
 	    );
    }
@@ -102,7 +102,7 @@ class Profile extends DataObject implements PermissionProvider {
 	function requireDefaultRecords() {
 		if(self::$required ) return;
 		self::$required=true;	
-		   Mentor::requireDefaultRecords();
+		   Organizer::requireDefaultRecords();
 	      parent::requireDefaultRecords();
 
       $adminGroup = $this -> updatePermissionDB('ADMIN', 'ADMIN');  
@@ -110,7 +110,7 @@ class Profile extends DataObject implements PermissionProvider {
       $registeredGroup = $this -> updatePermissionDB('REGISTERED_USER', 'Regular registered users');  
       $this -> updatePermissionDB('POWER_USER', 'Extended privilege users');  
       $this -> updatePermissionDB('ROBOT_USER', 'Sends Tweets');  
-      $mentorGroup = $this -> updatePermissionDB('MENTOR', 'Most Privileged');  
+      $OrganizerGroup = $this -> updatePermissionDB('ORGANIZER', 'Most Privileged');  
       $jim = DataObject::get_one('Member', "`Email`='jahbini@jahbini.org'");
       if(!$jim) {
 	      $jim=new Member(array('FirstName'=>'Jim') );
@@ -139,13 +139,13 @@ class Profile extends DataObject implements PermissionProvider {
 	      }
 	      $u->Groups()->add($registeredGroup);
       }
-      $mentors = DataObject::get("Mentor");
-      foreach($mentors as $b) {
+      $Organizers = DataObject::get("Organizer");
+      foreach($Organizers as $b) {
 	      $member=$b->Profile()->Member();
-	      error_log("MENTOR adding " . $member->FirstName . " to mentor and registered group");
+	      error_log("ORGANIZER adding " . $member->FirstName . " to Organizer and registered group");
 	      // insure member is written and has an ID before adding Group info
 	      $member->write();
-	      $member->Groups()->add($mentorGroup);
+	      $member->Groups()->add($OrganizerGroup);
 	      $member->Groups()->add($registeredGroup);
 	      $member->write();
       }
