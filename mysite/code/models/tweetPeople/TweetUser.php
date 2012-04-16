@@ -351,7 +351,7 @@ JS
 				}
 			if (  stristr($contents, "Not found") ) {
 				$this->name=$this->screen_name = $params['screen_name'];
-				$this->description = "Not found by Twitter";
+				$this->description = "Error -- Not found by Twitter";
 				$this->received=true;
 				$this -> forceChange();
 				$this -> write();
@@ -360,7 +360,7 @@ JS
 			}
 			if (  stristr($contents, "User has been suspended") ) {
 				$this->name= $params['screen_name'];
-				$this->description = "Suspended";
+				$this->description = "Error -- Suspended";
 				$this->received=true;
 				$this -> forceChange();
 				$this -> write();
@@ -368,6 +368,7 @@ JS
 				return false;
 			}
 
+			$this->description = "Error -- Twitter Fail";
 			error_log("Twitter failed to get user, code=".$code);
 			error_log("Twitter says: ". $conn->getBody());
 			return true;

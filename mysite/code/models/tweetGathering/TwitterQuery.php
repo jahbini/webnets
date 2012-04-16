@@ -12,13 +12,30 @@ class TwitterQuery extends DataObject {
 		,'highestID' => 'Double'
 		,'TotalTweets' => 'Int'
 		,'Mobi' => 'Boolean'
-		,'statusMsg'=>'Text'
 		);
 	static $indexes = array ( 'Title'=>true, 'query'=>true );
 	static $has_many = array ('Gaps' =>'TweetGap');
 	static $belongs_many_many = array('Profiles' => 'Profile');
 	static $has_one = array ('QueryTag' =>'Tag','PenName' => 'PenName'); // PenName for authorization
 
+	function onBeforeDelete(){
+		$gaps = $this->Gaps();
+		foreach($gaps as $g) $g->Delete();
+		parent::onBeforeDelete();
+	}
+
+	function getPenName(){
+		Debug::show("Getting Pen Name in TwitterQuery ID=". $this->PenNameID);
+		$p= DataObject::get_by_id('PenName',$this->PenNameID);
+		Debug::show($p);
+		Debug::show("Getting Pen Name in TwitterQuery ID=". $this->PenNameID);
+		return $p;
+	}
+	function setPenName($p){
+		if(is_object($p) ) $this->PenNameID=$p->ID;
+		if(is_int($p)) $this->PenNameID=$p;
+		return;
+	}
 	function authorization () {
 		switch($this->authority) {
 			case "none": return false;
@@ -34,10 +51,20 @@ class TwitterQuery extends DataObject {
 		return ($this->requestKind == "Proxy");
 	}
 
+// set the StatusMessage handling links
+	function setLogging($gap){
+		$this->logging = $gap;
+	}
+	function sayThis($t){
+		error_log($t);
+		if($this->logging) $this->logging->sayThis($t);
+	}
+
 	function __construct() {
 		$args =func_get_args() ;
 		call_user_func_array('parent::__construct' , $args );
 		$this -> range=new TweetRange;
+		$this->logging = false;
 		$this -> debug=false;
 		$this -> queryTag=false;
 		return;

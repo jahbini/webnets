@@ -30,7 +30,8 @@ class ShowContest_Controller extends Page_Controller {
 		$start = ($this->request->requestVar('start')) ? (int)$this->request->requestVar('start'):0;
 			 // susan boyle will blow the memory so we limit it
 		$Tweets = ($tag)?  $Tweets = $tag->myTweets($start,$filter):singleton('ComponentSet');
-		$Tweets -> setPageLength(Page_Controller::sessionInfo('limit') );
+		$Tweets = new PaginatedList($Tweets);
+		$Tweets -> setPageLength( Page_Controller::sessionInfo('limit'));
 		if($filter == "") {
 			$total_tweets = $Tweets -> TotalItems();
 			$tag->NumTweets=$total_tweets;
@@ -46,9 +47,13 @@ class ShowContest_Controller extends Page_Controller {
 		$ps = $pen->screen_name;
 		$tag =& Tag::getTagByName("Private_$ps");
 		$start = ($this->request->requestVar('start')) ? (int)$this->request->requestVar('start'):0;
-		$t = DataObject::get('Tweet',"`recipient_screen_name`='$ps' OR (`author_name`='$ps' AND `recipient_screen_name` IS NOT NULL)",'`published` DESC',"","$start,$limit");
-		if($t) $t -> setPageLength($limit);
-		$data = array('Tag'=> $tag, 'Tweeties' => $t,  'Title' => 'private') ;
+		$Tweets = DataObject::get('Tweet',"`recipient_screen_name`='$ps' OR (`author_name`='$ps' AND `recipient_screen_name` IS NOT NULL)",'`published` DESC',"","$start,$limit");
+		$Tweets = new PaginatedList($Tweets);
+		if($Tweets){
+			$Tweets = new PaginatedList($Tweets);
+		       	$Tweets -> setPageLength($limit);
+		}
+		$data = array('Tag'=> $tag, 'Tweeties' => $Tweets,  'Title' => 'private') ;
 	  	return $this->customise($data)->renderWith(array('Tag_results', 'Page'));
 	}
 
@@ -69,6 +74,7 @@ class ShowContest_Controller extends Page_Controller {
 			$tagName = "unknown";
 		}
 		$limit=Page_Controller::sessionInfo('limit');
+		$Tweets = new PaginatedList($Tweets);
 		$Tweets -> setPageLength($limit);
 		$data = array('Tag'=> $tag, 'Tweeties' => $Tweets,  'Title' => 'Tags of a $tagName kind') ;
 	  	return $this->customise($data)->renderWith(array('Tag_results', 'Page'));
@@ -84,7 +90,10 @@ class ShowContest_Controller extends Page_Controller {
 		$start = ($this->request->requestVar('start')) ? (int)$this->request->requestVar('start'):0;
 		$limit=Page_Controller::sessionInfo('limit');
 		$Tweets = DataObject::get('Tweet', "`author_name` ='$name' OR `Title` LIKE '@$name %'","published DESC","","$start,$limit");
-		if ($Tweets)$Tweets -> setPageLength($limit);
+		if ($Tweets){
+			$Tweets = new PaginatedList($Tweets);
+			$Tweets -> setPageLength($limit);
+		}
 		$data = array('Tag'=> '@'.$name, 'Tweeties' => $Tweets,  'Title' => 'Tweets from ' . $name ) ;
 	  	return $this->customise($data)->renderWith(array('Tag_results', 'Page'));
 	}
@@ -102,6 +111,7 @@ class ShowContest_Controller extends Page_Controller {
 		$sorting = ($this->request->requestVar('sorting')) ? (int)$this->request->requestVar('sorting'):'last_tweet DESC';
 		$limit=Page_Controller::sessionInfo('limit',true, $this->request->requestVar('limit'));
 		$users= $pen->{$magicRoutine}($start,$limit,$sorting);
+		$users = new PaginatedList($users);
 		$users -> setPageLength($limit);
 
 		$data = array('Tag'=> 'Friends', 'Users' => $users,  'Title' => 'All Friends (upline) of ' . $pen->screen_name ) ;
@@ -151,7 +161,10 @@ class ShowContest_Controller extends Page_Controller {
 		$start = ($this->request->requestVar('start')) ? (int)$this->request->requestVar('start'):0;
 		$limit=Page_Controller::sessionInfo('limit');
 		$Tweets = DataObject::get('Tweet', "`recipient_screen_name` IS NULL","published DESC","","$start,$limit");
-		if ($Tweets)$Tweets -> setPageLength($limit);
+		if ($Tweets){
+			$Tweets = new PaginatedList($Tweets);
+			$Tweets -> setPageLength($limit);
+		}
 		$data = array('Tag'=> 'Public', 'Tweeties' => $Tweets,  'Title' => 'Most Recent Tweets') ;
 	  	return $this->customise($data)->renderWith(array('Tag_results', 'Page'));
 	}

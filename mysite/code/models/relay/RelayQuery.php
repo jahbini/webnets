@@ -1,11 +1,9 @@
 <?php
 
 class RelayQuery extends TwitterQuery {
-	// static $has_one=array('Profile'=> 'Profile','Organizer'=>'Organizer');  // Organizer is the sponsor, maitre de, and majordomo for the page
+	static $has_one=array('Pane'=>'Pane','Organizer'=>'Organizer');  // Organizer is the sponsor, maitre de, and majordomo for the page
 	static $defaults = array("requestKind" => "proxy", "authority" => "penName") ;
-	static $has_one=array('Pane' => 'Pane');
 	protected $mentee = false;
-	protected $Organizer = false;
 	protected $authenticator = false;
 
 	function __construct() {
@@ -41,11 +39,10 @@ class RelayQuery extends TwitterQuery {
 	}
 
 	function setOrganizer ($m) {
-		$this->Organizer = $m;
+		$this->OrganizerID = $m->ID;
 	}
 
 	function forcePenName() {
-		//Debug::show("Query ID = ". $this->ID . " authority=" . $this->authority);
 		switch($this->authority) {
 
 			case 'none':
@@ -105,13 +102,14 @@ class RelayQuery extends TwitterQuery {
 	 * grab tweets for all authenticated twitter requests
 	 */
 	function grabMoreTweets($param=array() ) {
-		$range = $this->range;
-		$this -> nurse = new rqNurse($this,$range);
+		$this->sayThis("Grabbing for " . $this->ClassName);
+		$this -> nurse = new rqNurse($this);
+		$range=new TweetRange;
 		$range->reschedule = $this->nurse->preSchedule();
 		if($range->reschedule > 30 ) return $range;
 		$q= $this->requestString();
 		$this->debug =1;
-		if($this->debug) error_log("grabbing tweets for query " . $q . ' Type= '. $this->ClassName);
+		if($this->debug) $this->sayThis("grabbing tweets for query " . $q . ' Type= '. $this->ClassName);
 		$this->forcePenName();
 		$range = $this->fillTweets($param,$this->requestString(), $this->Authenticate() );
 		$range->reschedule = $this->nurse-> postSchedule();
@@ -130,8 +128,7 @@ class RelayQuery extends TwitterQuery {
 	function fillTweets($inp=array()) {
 		// on rate limiting -- the search API does not use any limiting strategy as of July 14, 2009
 		//  this may change if and when Twitter updates the code
-		//$this -> range=new TweetRange;
-		$range= $this->range;
+		$range=new TweetRange;
 		$this->setDebug(false);
 
 		$inp['routine'] = __METHOD__;
@@ -150,16 +147,16 @@ class RelayQuery extends TwitterQuery {
 		
 		$log_msg = "processed $tweetsProcessed in $elapsedTime seconds";
 		$this->containsRange($range); // update and write the range in this twitterQuery
-		$range->log_me($this->query); // enter the log message
-		$range->log_me($log_msg);
+		$this->sayThis($this->query); // enter the log message
+		$this->sayThis($log_msg);
 		return $range;
 	}
 
 
 	function fillTweetsFromAPI($params=array(),$service) {
-	$debug_hot=false;
-		//$this -> range=new TweetRange;
-if($debug_hot) error_log("in " . __CLASS__. " Method " . __METHOD__ . " Line=" . __LINE__ );
+	$debug_hot=true;
+		$range=new TweetRange;
+if($debug_hot) $this->sayThis("in " . __CLASS__. " Method " . __METHOD__ . " Line=" . __LINE__ );
 		if ($penName = $this->Authenticate() ) {
 			$scheduler = $penName -> get_scheduler();
 		} else {
@@ -167,34 +164,33 @@ if($debug_hot) error_log("in " . __CLASS__. " Method " . __METHOD__ . " Line=" .
 		}
 		$s=$scheduler->schedule();
 		if ($s>0) {
-			$this->range -> setMessage("Twitter scheduler says to wait until unix time $s");
-			$this->range -> reschedule =$s;
+			$this -> sayThis("Twitter scheduler says to wait until unix time $s");
+			$range -> reschedule =$s;
 			return $this->range;
 		}
-if($debug_hot) error_log("in " . __CLASS__. " Method " . __METHOD__ . " Line=" . __LINE__ );
+if($debug_hot) $this->sayThis("in " . __CLASS__. " Method " . __METHOD__ . " Line=" . __LINE__ );
 		$service .= '.json';
-		error_log("getting API sent tweets SERVICE = " . $service);
+		$this->sayThis("getting API sent tweets SERVICE = " . $service);
 		$twitter = new SaneRest($service );
 		
-		$range=$this->range;
 		$params['routine'] = __METHOD__;
 		$params = $range->setParams($params);
 		$params['count'] = 100;
 
 		$twitter->setQueryString($params);
 		$author = $this->Authenticate();  // returns false or a penName
-		if($debug_hot) error_log($twitter->getQueryString(). ' Authentication =' . ($author?$author->screen_name:'None Needed'));
+		if($debug_hot) $this->sayThis($twitter->getQueryString(). ' Authentication =' . ($author?$author->screen_name:'None Needed'));
 		$range ->setRequest($service,$twitter->getQueryString() );
 		if ($author) { $twitter->authenticate($author); }
 		$conn = SaneResponse::makeSane($jsdata=$twitter->request());
-if($debug_hot) error_log("in " . __CLASS__. " Method " . __METHOD__ . " Line=" . __LINE__ );
+if($debug_hot) $this->sayThis("in " . __CLASS__. " Method " . __METHOD__ . " Line=" . __LINE__ );
    $this->range->reschedule  = ($scheduler-> request_complete($twitter->returnHeaders())) ; 
 		$response = $conn->analyze_code();
 		if ($response) return $range;  // it did not work
 		$jsdata = $jsdata->getBody();
 		$msgs = json_decode($jsdata);
 
-if ($debug_hot) error_log("in " . __CLASS__. " Method " . __METHOD__ . " Line=" . __LINE__ );
+if ($debug_hot) $this->sayThis("in " . __CLASS__. " Method " . __METHOD__ . " Line=" . __LINE__ );
 
 		$tag = $this->mysetQueryTag();
 
@@ -203,7 +199,7 @@ if ($debug_hot) error_log("in " . __CLASS__. " Method " . __METHOD__ . " Line=" 
 		$tweetsProcessed = 0;
 		$elapsedTime = time();
 		if ($msgs && is_array( $msgs)) foreach  ($msgs as $entry) {
-if ($debug_hot) error_log("in " . __CLASS__. " Method " . __METHOD__ . " Line=" . __LINE__ . " TAG = ". $tag->ID );
+if ($debug_hot) $this->sayThis("in " . __CLASS__. " Method " . __METHOD__ . " Line=" . __LINE__ . " TAG = ". $tag->ID );
 			$u = $entry;
 			$tweet = $entry;
 			if (isset($entry->status ) ) {
@@ -231,8 +227,8 @@ if ($debug_hot) error_log("in " . __CLASS__. " Method " . __METHOD__ . " Line=" 
 				$t->apiTweet = true; // we have done the full user proceessing on this guy
 				$t->Title      = $tweet->text;
 				if(!isset($u->screen_name) || !$u->screen_name) {
-					error_log("BAD ENTRY");
-					error_log(print_r($entry,1));
+					$this->sayThis("BAD ENTRY");
+					$this->sayThis("<pre>".print_r($entry,1)."</pre>");
 					$t->author_name = "unknown";
 				} else 
 					$t->author_name= $u->screen_name;
@@ -257,14 +253,12 @@ if ($debug_hot) error_log("in " . __CLASS__. " Method " . __METHOD__ . " Line=" 
 			if ($t){ if($range ->containsTweet($t)) { break; }
 			}
 		}
-if($debug_hot) error_log("in " . __CLASS__. " Method " . __METHOD__ . " Line=" . __LINE__ );
+if($debug_hot) $this->sayThis("in " . __CLASS__. " Method " . __METHOD__ . " Line=" . __LINE__ );
 
 		$this->containsRange($range); // update and write the range in this twitterQuery
-		$range->log_me("User query - ".$this->query); // enter the log message
 		$elapsedTime = time() - $elapsedTime;
 		$log_msg = "processed $tweetsProcessed in $elapsedTime seconds";
-		error_log($log_msg);
-		$range->log_me($log_msg); // enter the log message
+		$this->sayThis($log_msg);
 		
 //error_log("in " . __CLASS__. " Method " . __METHOD__ . " Line=" . __LINE__ ." return");
 		return $range;

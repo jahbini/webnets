@@ -103,6 +103,7 @@ class TagPage_Controller extends ContentController {
 		$start = ($this->request->getVar('start')) ? (int)$this->request->getVar('start'):0;
 			 // susan boyle will blow the memory so we limit it
 		$Tweets = ($tag)?  $Tweets = $tag->Tweets('','','',$start . ",25"):singleton('ComponentSet');
+		$Tweets = new PaginatedList($Tweets);
 		$Tweets -> setPageLength(25);
 		$data = array('Tag'=> $tag, 'Tweeties' => $Tweets,  'Title' => 'Tags of a ' . $name . ' kind') ;
 	  	return $this->customise($data)->renderWith(array('Tag_xxresults', 'Page'));

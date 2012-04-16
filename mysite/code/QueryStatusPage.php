@@ -1,6 +1,10 @@
 <?php
+/* Query Page attempts to show the current status of the gaps in the twitter responses
+ * to a given query.
+ * the user is able to reschedule or delete any gap, which may become stuck or error prone
+ */
 
-class QueryPage extends SiteTree {
+class QueryStatusPage extends SiteTree {
 	
 	public static $db = array(
 	);
@@ -14,13 +18,13 @@ class QueryPage extends SiteTree {
 		self::$required=true;
 		parent::requireDefaultRecords();
 		$pPage = DataObject::get_one("SiteTree", "URLSegment='gapstatus'");
-		if ($pPage instanceOF QueryPage) return;
+		if ($pPage instanceOF QueryStatusPage) return;
 		if ($pPage instanceOF Page ) {
-			$pPage = $pPage -> newClassInstance('QueryPage');
+			$pPage = $pPage -> newClassInstance('QueryStatusPage');
 			$pPage -> write();
 		}
 		if (!$pPage) {
-			$pPage = new QueryPage();
+			$pPage = new QueryStatusPage();
 		}
 		$pPage -> CanViewType = 'LoggedInUsers';
 		$pPage -> ShowInSearch = false;
@@ -36,7 +40,7 @@ class QueryPage extends SiteTree {
 	
 }
 
-class QueryPage_Controller extends ContentController {
+class QueryStatusPage_Controller extends ContentController {
 	
 	public function init() {
 		$this->requiresTweetAction = false;
@@ -87,26 +91,27 @@ JS
 	}
 	
 	function dropGap(){
+		if (!$this->isAjax()) Director::redirectBack();
 		error_log("here at dropGap");
 		$GapID=$this->request->requestVar('Gap');
 	 	$g=DataObject::Get_by_id('TweetGap',$GapID);
 		$g->delete();
-		//FormResponse::add("alert('dropped');");
-		FormResponse::add(  "jQuery('tr[class*=gap__{$GapID}]').remove();");
-		return FormResponse::respond();	
+		return  "jQuery('tr[class*=gap__{$GapID}]').remove();";
 	}
 
 	
 	function rescheduleGap(){
 		error_log("here at rescheduleGap");
+		if (!$this->isAjax()) Director::redirectBack();
 		$GapID=$this->request->requestVar('Gap');
 	 	$g=DataObject::Get_by_id('TweetGap',$GapID);
 		$g->Reschedule();
 
+	
 	  	$contents = $this->customise($g)->renderWith(array('Gap'));
-		FormResponse::update_dom_id("gapp".$GapID, $contents, false);
-		//FormResponse::add("alert('rescheduled');");
-		return FormResponse::respond();	
+
+		$contents = str_replace("\n",' ',$contents);
+		return "jQuery('#gapp".$GapID. "').html('" . $contents ."');";
 	}
 
 	function initQuery(){
@@ -121,10 +126,8 @@ JS
 		$q->write();
 		$q->insureInitialGap();
 	  	$contents = $this->customise($q)->renderWith(array('OneQuery'));
-		FormResponse::update_dom_id("query__".$q->ID, $contents, false);
-		//FormResponse::add(  "jQuery('tr[class*=query__{$QueryID}]').remove();");
-		//error_log("send response");
-		return FormResponse::respond();	
+		$contents = str_replace("\n",' ',$contents);
+		return "jQuery('#query__".$q->ID . "').html('". $contents ."');";
 	}
 	
 
@@ -136,14 +139,13 @@ JS
 		$g= $q->gaps();
 		$g->removeAll();
 		$q->delete();
-		FormResponse::add(  "jQuery('tr[class*=query__{$QueryID}]').remove();");
-		//error_log("send response");
-		return FormResponse::respond();	
+		return "jQuery('tr[class*=query__{$QueryID}]').remove();";
 	}
 	
 	function index($data =false) {
+		Requirements::javascript(THIRDPARTY_DIR. '/jquery/jquery.js');
 		$this->JavaScriptDrop();
-		error_log("here at index or QueryPage");
+		error_log("here at index or QueryStatusPage");
 		if (is_string($data) ) $name = $data;
 			else $name = $data->param('ID');
 		Director::set_environment_type('dev');

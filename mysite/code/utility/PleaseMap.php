@@ -11,10 +11,8 @@ class rqNurse {
 	var $channel = false; // the twitter oAuth channel
 	var $Organizer = false;
 	var $mentee = false;
-	var $range = false; // for logging the request and any errors
 	function __construct($rQ,$r=false) {
 		$this->relayQuery =& $rQ;
-		$this->range = $r;
 		$this ->penName = DataObject::get_by_id('PenName', $rQ->PenNameID);
 		   if(! $this->penName instanceOf PenName ) {
 				$this->scheduler= IPScheduler::get_IPscheduler();
@@ -34,6 +32,7 @@ class rqNurse {
 
 	function preSchedule(){
 	   $s = $this->scheduler->schedule();
+		$this ->relayQuery->sayThis($s);
 		   error_log("Scheduler says $s");
 		   return $s;
 	}
@@ -76,9 +75,15 @@ class rqNurse {
 	   } else {
 		   $this->channel = new TwitterOAuth($consumer_key, $consumer_secret, $this->penName -> request_token , $this->penName -> request_token_secret);
 		   $content = $this->channel->OAuthRequest($w . '.json', $this->relayQuery->requestParams($params),'GET');
-		//error_log(print_r($this-> channel -> responseHeaders(),1));
+		error_log(print_r($this-> channel -> responseHeaders(),1));
 	   }
-		if ($this->range) $range->setRequest($this->channel-getAbsoluteURL(),$params);
+		$this ->relayQuery->sayThis(
+			"<p>Complete Request: "
+			. $this->channel->getAbsoluteURL()
+			. $this->channel->getQueryString() 
+			."<br />" 
+			.  substr($content,0,45) ."</p>" 
+		);
 	   if(!$content && $cacheOK ) {
 		   $content = $this->get_from_cache(360);   // get anything up to five minutes old
 	   }
@@ -240,6 +245,21 @@ class SaneRest extends ViewableData {
 		return "error in saneResponse for ". $this->ActualURL;
 	}
 
+
+		function getAbsoluteURL($subURL=''){
+		$url = $this->baseURL . $subURL; // Url for the request
+		if($this->queryString) {
+			if(strpos($url, '?') !== false) {
+				$url .= '&' . $this->queryString;
+			} else {
+				$url .= '?' . $this->queryString;
+			}
+		}
+
+		$this->ActualURL= str_replace(' ', '%20', $url); // Encode spaces
+		return $this->ActualURL;
+		}
+		
 	
 	/**
 	 * Makes a request to the RESTful server, and return a {@link RestfulService_Response} object for parsing of the result.
@@ -269,21 +289,6 @@ class SaneRest extends ViewableData {
 			$this->response = new RestfulService_Response($this->responseBody, $r->lastStatusCode());
 			return $this->response;
 		}
-
-		function getAbsoluteUrl($subURL){
-		$url = $this->baseURL . $subURL; // Url for the request
-		if($this->queryString) {
-			if(strpos($url, '?') !== false) {
-				$url .= '&' . $this->queryString;
-			} else {
-				$url .= '?' . $this->queryString;
-			}
-		}
-
-		$this->ActualURL= str_replace(' ', '%20', $url); // Encode spaces
-		return $this->ActualURL;
-		}
-		
 		assert(in_array($method, array('GET','POST','PUT','DELETE','HEAD','OPTIONS')));
 		
 			
@@ -417,7 +422,12 @@ class RestfulService_Response extends SS_HTTPResponse {
 	}
 	
 	function __construct($body, $statusCode = 200, $headers = null) {
-		//Debug::show ("BODY = $body");
+		if($statusCode==0) {
+			Debug::show ("Bad status code -- setting to 400");
+			Debug::show ("BODY = $body");
+			Debug::show ($headers);
+			$statusCode=400;
+		}
 		$this->setbody($body);
 		$this->setStatusCode($statusCode);
 		$this->headers = $headers;

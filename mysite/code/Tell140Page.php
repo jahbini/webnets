@@ -491,19 +491,20 @@ class Tell140Page_Controller extends Page_Controller {
 	}
 
 static function RequireTweetAction(){
-   Requirements::javascript('mysite/javascript/hoverIntent.min.js');
-   Requirements::javascript('mysite/javascript/maxlength.js');
    if(Director::isLive() && ! Session::get('notrack') =="true" ) {
       //Requirements::javascript('mysite/javascript/waterfall.min.js');
       Requirements::javascript('mysite/javascript/waterfall.js');
    } else {
       Requirements::javascript('mysite/javascript/waterfall.js');
    }
+   Requirements::javascript('mysite/javascript/hoverIntent.min.js');
+   Requirements::javascript('mysite/javascript/maxlength.js');
+   Requirements::javascript('tools.scrollable-1.0.5.js');
 }
 
 
 	function TweetBox () {
-		ERROR_LOGGER("entering TweetBox");
+	   self::RequireTweetAction();
 		$penNameID = Session::get('penName');
 
 	  	$theForm =  new TweetBoxForm($this, "TweetBox");

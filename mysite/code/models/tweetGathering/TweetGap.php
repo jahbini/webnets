@@ -5,18 +5,27 @@ class TweetGap extends DataObject {
 		'gapBottom'=>'Varchar(20)',
 		'currentTop'=>'Varchar(20)',
 		'gapTop'=>'Varchar(20)',
-		'statusMsg'=>'Text',
 		'failed' => "Enum('no,warn,yes','yes')",
 		'TimeOffset' => 'Int'
 	);
 	static $defaults = array ('TimeOffset' => 3600 );  // one hour
 	static $has_one=array('TwitterQuery'=>'TwitterQuery');
-	
+	static $has_many=array('StatusMsg' => 'StatusMessage');	
+
+	function sayThis($t){
+		StatusMessage::sayThis($this,$t);
+	}
 	function TimeToSchedule($from) {
 		$tq=$this->TwitterQuery();
 		if (method_exists($tq,'TimeToSchedule') )
 	       		return $tq->TimeToSchedule($from);
 		return $this->TimeOffset + $from;
+	}
+
+	function onBeforeDelete(){
+		$logMessages=$this->StatusMsg();
+		foreach($logMessages as $m) { $m->delete(); }
+		parent::onBeforeDelete();
 	}
 
 	function bottom () {
@@ -45,13 +54,16 @@ class TweetGap extends DataObject {
 	function getHighTweets() {
 		$this ->setStat('getHighTweets',true);
 		$parentQuery=$this->TwitterQuery();
+		$parentQuery->setLogging($this);
 		if (!$parentQuery || $parentQuery->ID ==0) {
+			error_log("parent query does not exist or has ID=0");
 			$this->delete();
 			return false;
 		}
 
 		$this->debugMe=false;
 		$parentQuery->setDebug(false);
+	error_log("needing High tweets ");
 	$this->setStat(" needing HIGH Tweets above ". $this->current());
 		$range = $parentQuery->grabMoreTweets(array('since_id' => $this->currentTop ));
 		$this->reschedule = $range->reschedule;
@@ -96,19 +108,17 @@ class TweetGap extends DataObject {
 
 	function setStat ( $msg, $clear = false,$final='yes') {
 		$this ->failed = $final;
-		if ($clear) { $this->statusMsg = ""; }
-		if ($this->statusMsg != "") $msg = '<br>'.$msg;
-		$this->statusMsg .= $msg;
-		$this->write();
+		$v = StatusMessage::sayThis($this,$msg);
 		if ($this->debugMe) error_log($msg);
 		return $this;
 	}
 	function status() {
-		return $this->statusMsg;
+		return $this->StatusMsg();
 	}
 
 	function getInitialTweets(){
 		$parentQuery=$this->TwitterQuery();
+		$parentQuery->setLogging($this);
 		// hardly probable, but ifadmin deletes the query before it actually
 		// completes through twitter, this is a possibility
 		if (!$parentQuery || $parentQuery->ID ==0) {
@@ -133,7 +143,9 @@ class TweetGap extends DataObject {
 	}
 	function getLowTweets() {
 		$parentQuery=$this->TwitterQuery();
+		$parentQuery->setLogging($this);
 		if (!$parentQuery || $parentQuery->ID ==0) {
+			error_log("parent query does not exist or has ID=0");
 			$this->delete();
 			return false;
 		}
@@ -163,6 +175,7 @@ class TweetGap extends DataObject {
 		//$this->TimeOffset = 60*60*2; //schedule in two hours
 		//return $this;
 		$parentQuery=$this->TwitterQuery();
+		$parentQuery->setLogging($this);
 		$this->debugMe=true;
 		if (!$parentQuery || $parentQuery->ID ==0) {
 			$this->delete();
@@ -241,7 +254,8 @@ $this->setStat("Mid Gap Tweets below " . $this->current() .", my parent ID = {$p
 	function reschedule(){
 		$parent=$this->TwitterQuery();
 		$todoType=$parent->ToDoType();
-		$t = DataObject::get_one('ToDo', '`TheObject`="TweetGap" AND `ObjectID`=' . $this->ID);
+		$t = DataObject::get_one('ToDo', NiceData::Query('TheObject', "TweetGap") 
+				. " AND " . NiceData::Query( 'ObjectID' , $this->ID) );
 		if ($t) { $t->delete();}
 		switch ( $this->gapKind)  {
 			case "initial": $operation = 'getInitialTweets';

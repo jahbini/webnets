@@ -75,6 +75,7 @@ class Cell176Page_Controller extends Page_Controller {
 		$start = ($this->request->requestVar('start')) ? (int)$this->request->requestVar('start'):0;
 			 // susan boyle will blow the memory so we limit it
 		$Tweets = ($tag)?  $Tweets = $tag->myTweets($start,$filter):singleton('ComponentSet');
+		$Tweets = new PaginatedList($Tweets);
 		$Tweets -> setPageLength(Page_Controller::sessionInfo('limit') );
 		if($filter == "") {
 			$total_tweets = $Tweets -> TotalItems();
@@ -171,7 +172,10 @@ class Cell176Page_Controller extends Page_Controller {
 		$start = ($this->request->requestVar('start')) ? (int)$this->request->requestVar('start'):0;
 		$limit=Page_Controller::sessionInfo('limit');
 		$Tweets = DataObject::get('Tweet', "`recipient_screen_name` IS NULL","published DESC","","$start,$limit");
-		if ($Tweets)$Tweets -> setPageLength($limit);
+		if ($Tweets) {
+		       	$Tweets = new PaginatedList($Tweets);
+			$Tweets -> setPageLength($limit);
+		}
 		$data = array('Tag'=> 'Public', 'Tweeties' => $Tweets,  'Title' => 'Most Recent Tweets') ;
 	  	return $this->customise($data)->renderWith(array('Tag_results', 'Page'));
 	}

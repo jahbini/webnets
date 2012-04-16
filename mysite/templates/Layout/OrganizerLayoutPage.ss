@@ -25,7 +25,7 @@ $forcePane($ID)
 <ul>
 <% control Queries %>
 <li>$ID , $Title , $ClassName
-<a href='{$Top.link}deleteQuery/Query=$ID' >Delete this  Query</a></li>
+<a href='{$Top.link}deleteQuery?RelayQuery=$ID' >Delete this  Query</a></li>
 </li>
 <% end_control %>
 <li>:::::

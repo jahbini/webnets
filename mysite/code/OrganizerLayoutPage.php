@@ -86,12 +86,12 @@ class OrganizerLayoutPage_Controller extends ProfilePage_Controller {
 	 return false;
       }
       function getQuery(){
-	 $key='Query';
+	 $key='RelayQuery';
 	 if ($v=getFromCacheOrURL($key)) return $v;
-	 //Debug::show($_REQUEST);
-	 //Debug::show($this->request);
-	 //SS_Backtrace::backtrace();
-	 //die();
+	 Debug::show($_REQUEST);
+	 Debug::show($this->request);
+	 SS_Backtrace::backtrace();
+	 die();
 	 return false;
       }
 
@@ -106,6 +106,10 @@ class OrganizerLayoutPage_Controller extends ProfilePage_Controller {
 	}
 	 function deletePaneInfo($request){
 	   $this->Pane->delete();
+	  Director::redirectBack();
+	 }
+	 function deleteQuery($request){
+	   $this->Query->delete();
 	  Director::redirectBack();
 	 }
 
@@ -174,9 +178,9 @@ class OrganizerLayoutPage_Controller extends ProfilePage_Controller {
 	}
 
 	function forceMode($which){
-	   Debug::show($_REQUEST);
+	   //Debug::show($_REQUEST);
 	       $p = $this->Organizer;
-	   Debug::show($p);
+	   //Debug::show($p);
 		$modes = $p->Modes('"Use"=\''.$which."'");
 		if($modes->count() == 0) {
 		   $m = new Mode();
@@ -196,7 +200,8 @@ class OrganizerLayoutPage_Controller extends ProfilePage_Controller {
 	}
 	function queryForm($wantedQuery=false)
 	   {
-	      $RelayClasses = array (
+
+	      $this->RelayClasses = array (
 		 'UserRelayQuery' => 'public messages sent from twitter account',
 		 'FriendsTimelineRelayQuery' => "messages from friend of ".$this->joinPenNames()." in Timeline",
 		 'FromDirectRelayQuery' => "Direct messages sent by ".$this->joinPenNames(),
@@ -206,11 +211,12 @@ class OrganizerLayoutPage_Controller extends ProfilePage_Controller {
 		 'MentionsRelayQuery' => "tweets containing @".$this->joinPenNames(),
 		 'SearchRelayQuery' => "messages with keywords"
 	      );
+
 	      if(!$wantedQuery || !($wantedQuery instanceof RelayQuery)) {
 		 $action = new FormAction("createQuery", "Create Query");
 		 $map = array();
 		 $f = new Fieldset();
-		 foreach($RelayClasses as $k=>$v) {
+		 foreach($this->RelayClasses as $k=>$v) {
 		      $obj=singleton($k);
 		      $field= $obj->makeForm($k,$v,$this);
 		    $map[ $k .'//'. $v] = $field;
@@ -221,18 +227,32 @@ class OrganizerLayoutPage_Controller extends ProfilePage_Controller {
 		 $action = new FormAction("editQuery", "Edit Query");
 		 $fs=new FieldList();
 		 $c= $wantedQuery->ClassName;
-		 $fs->push($c::makeForm($c,$RelayClasses[$c], $this));
+		 $fs->push($c::makeForm($c,$this->RelayClasses[$c], $this));
 	      }
-	     return new Form($this,'queryForm?Pane='. $this->newQuery4Pane,$fs, new FieldList($action));
+	     $f= new Form($this,'queryForm?Pane='. $this->newQuery4Pane,$fs, new FieldList($action));
+	      $f->setHTMLID('queryForm');
+	     return $f;
 	   }
 	function createQuery($data,$form) {
 	   $x= new $data['allQueries']();
-	   $form->saveInto($x);
+	   try{
 	   $x -> PaneID = $this->Pane->ID;
 	   $x -> PenNameID = $this->Organizer->ID;
-	   $x->Mobi=true;
+	   $x -> Organizer = $this->Organizer;
+	   $form->saveInto($x);
 	   $x->write();
 	   Debug::show($x);
+	   $x->Mobi=true;
+	   Debug::show($x);
+	   $x->write();
+	   Debug::show($x);
+	   } catch (exception $e) {
+	      $form-> sessionMessage("Error in creating " .$this->RelayClasses[$data['allQueries']] ." - " .$e->getMessage(),"bad" );
+	      Director::redirectBack();
+	      return;
+	   }
+	   Debug::show($x);
+	   die();
 	   Director::redirect($this->Link() . '?Organizer=' . $this->Organizer->ID);
 	}
 }

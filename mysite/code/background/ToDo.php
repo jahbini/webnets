@@ -4,7 +4,7 @@
 //
 
 class ToDo extends DataObject {
-	static $db = array("Suspend" => "SSDatetime", "TheObject" => "Varchar" , "ObjectID" => 'int', "operation" => "Varchar", "params" => "Text" );
+	static $db = array("Suspend" => "Datetime", "TheObject" => "Varchar" , "ObjectID" => 'int', "operation" => "Varchar", "params" => "Text" );
 	static $indexes = array("Suspend" => true );
 
 	function firstSuspend() {
@@ -21,8 +21,9 @@ class ToDo extends DataObject {
 	}
 
 	function exists ( $operation ){
-		$item = DataObject::get('ToDo','`TheObject` = "' . $this->TheObject . '" AND `ObjectID` = "' . $this->ObjectID
-			.'" AND `operation`= "'.$operation .'"'  );
+		$item = DataObject::get('ToDo',NiceData::Query('TheObject', $this->TheObject)  
+					. ' AND ' . NiceData::Query('ObjectID', $this->ObjectID)
+					.' AND ' . NiceData::Query( 'operation' ,$operation )  );
 		if (!$item) return 0;
 		return $item->TotalItems();
 	}
@@ -37,7 +38,7 @@ class ToDo extends DataObject {
 			$class = $object;
 			$id=0;
 		}
-		$item = DataObject::get($classKind,'`TheObject` = "' . $class . '" AND `ObjectID` = "' . $id .'"' );
+		$item = DataObject::get($classKind,NiceData::Query('TheObject' , $class)  . ' AND ' . NiceData::Query('ObjectID', $id ) );
 		if (!$item) self::addToDoItem ($classKind, $object, $operation, $params);
 	}
 
@@ -59,19 +60,18 @@ if (is_object($object)) {
 	static function getNextToDoItem($kind) {
 		// get the oldest entry in the ToDo list
 		echo("To Do Item of kind " . $kind );
-		$o = DataObject::get_one($kind,"`Suspend`<now()",true,'`Suspend` ASC') ;
+		$o = DataObject::get_one($kind,'"Suspend"<now()',true,'"Suspend" ASC') ;
 		if ($o instanceOf ToDo) {
 			echo(" found " . $o->ID . " kind " . $o->operation );
 		}
 		echo("\n");
 		return $o;
-		return DataObject::get_one($kind,"`Suspend`<now()",true,'`Suspend` ASC') ;
 	}
 	// if we really have run out of things to do, then we can dip into the future a bit
 	static function getAnyToDoItem($kind) {
 		// get the ANY entry in the ToDo list that is less than 18  hours in the future
 		//   -- we do this when the number  of 'mid' gaps is "largeish"
-		return DataObject::get_one($kind,"`Suspend`<now()+18*60*60",true,'`Suspend` ASC') ;
+		return DataObject::get_one($kind,'"Suspend"<now()+18*60*60',true,'"Suspend" ASC') ;
 	}
 	function test () {
 		//Tweet::fixName();
@@ -98,6 +98,7 @@ if (is_object($object)) {
 			}
 		}
 		if(!$the_object) {
+			error_log("The object did not exist");
 			// if the object has been deleted (manually by the admin?) just go away
 			$this->delete();
 			return false;
@@ -107,6 +108,7 @@ if (is_object($object)) {
 		$the_object -> ToDoAccess = $this;
 
 		try {
+			error_log("calling $op on class ". $the_object->ClassName . " ID = " . $the_object->ID );
 		$rv = $the_object-> $op ( unserialize(base64_decode($this->params)) ) ;
 		} catch (Exception $e) {
 			error_log ("it Blew up" . $e ->getMessage()) ;

@@ -125,3 +125,16 @@ function getFromCacheOrURL($what,$fetch=true){
  return false;
 }
 
+
+function getFromCacheOrSession($what,$fetch=true,$sessionKey='loggedInAs'){
+      global $locals;
+ if(isset($locals[$what]) ) return $locals[$what];
+ $value = Session::get($sessionKey);
+ if($value>0 ) {
+    if ($fetch) $value = DataObject::get_by_id($what,$value);
+    $locals[$what]=$value;
+    return $value;
+ }
+ return false;
+}
+
