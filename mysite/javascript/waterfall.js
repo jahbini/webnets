@@ -855,7 +855,10 @@ w=90;
 
     /* send the tweet by ajax to  the host */
     $(form).find('.mainButton').click( function(event) {
-        var formAction = form.attr('action') + '?' + $(this).fieldSerialize();
+        var formAct = form.attr('action') ;
+	var formData = $(this).fieldSerialize();
+	var formAction = formAct + '?' + formData;
+        /*  WAS JAH -- var formAction = form.attr('action') + '?' + $(this).fieldSerialize(); */
         /* Post the data to save */
         $('#TweetBoxLegend').fadeTo('fast', .33);
         $.post(formAction, form.formToArray(),

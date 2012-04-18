@@ -56,8 +56,6 @@ class RelayPage_Controller extends Page_Controller {
 	 * @param request an HTTPRequest object, defining the actual request
 	 */
    function index($request) {
-	   global $consumer_key;
-	   global $consumer_secret;
 	   ContentNegotiator::disable();
 	   $this->getResponse()->addHeader('Content-Type', 'application/json; charset="utf-8"');
 	   $v = $request->getVars();

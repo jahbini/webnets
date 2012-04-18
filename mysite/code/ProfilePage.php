@@ -69,14 +69,12 @@ class ProfilePage_Controller extends TagWatch {
 	error_log("completePenName");
 	error_log("in " . __CLASS__. " Method " . __METHOD__ . " Line=" . __LINE__ );
 
-		global $consumer_key;
-		global $consumer_secret;
 		include_once('auth/twitterOAuth.php');
 		$request_token = $this->request_token;
 		$request_token_secret = Session::get('request_token_secret');
-		$askForAuth = new TwitterOAuth($consumer_key, $consumer_secret,$request_token,$request_token_secret);
+		$askForAuth = new TwitterOAuth(SubDomain::getTheConsumerKey(),SubDomain::getTheConsumerSecret(),$request_token,$request_token_secret);
 		$accessToken = $askForAuth->getAccessToken();
-		$gotAuth = new TwitterOAuth($consumer_key, $consumer_secret,$accessToken['oauth_token'],$accessToken['oauth_token_secret']);
+		$gotAuth = new TwitterOAuth(SubDomain::getTheConsumerKey(),SubDomain::getTheConsumerSecret(),$accessToken['oauth_token'],$accessToken['oauth_token_secret']);
 		$validator = $gotAuth->OAuthRequest('https://twitter.com/account/verify_credentials.json', array(),'GET');
 		if (!$validator) {
 			echo("Validator problems");

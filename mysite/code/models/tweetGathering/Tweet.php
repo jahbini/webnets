@@ -206,8 +206,7 @@ class Tweet extends DataObject {
 		}
 		DB::query('LOCK TABLES "Organizer" WRITE, "BigTweet" WRITE, "Tweet" WRITE,"Tweet_SimpleTags" WRITE, "Tag" WRITE, "TweetUser" WRITE, "PenName" WRITE, "UsersPenName" WRITE');
 		try {
-		$idVal=$x['StatusID'];
-		$t = new Tweet($id);
+		$t = new Tweet();
 		$t->Title = $text;
 		$t -> TweetUserID = $user->ID;
 		$t->author_name = $user->screen_name;

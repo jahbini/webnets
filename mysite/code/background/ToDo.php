@@ -21,9 +21,9 @@ class ToDo extends DataObject {
 	}
 
 	function exists ( $operation ){
-		$item = DataObject::get('ToDo',NiceData::Query('TheObject', $this->TheObject)  
-					. ' AND ' . NiceData::Query('ObjectID', $this->ObjectID)
-					.' AND ' . NiceData::Query( 'operation' ,$operation )  );
+		$item = DataObject::get('ToDo',NiceData::formQuery('TheObject', $this->TheObject)  
+					. ' AND ' . NiceData::formQuery('ObjectID', $this->ObjectID)
+					.' AND ' . NiceData::formQuery( 'operation' ,$operation )  );
 		if (!$item) return 0;
 		return $item->TotalItems();
 	}
@@ -38,7 +38,7 @@ class ToDo extends DataObject {
 			$class = $object;
 			$id=0;
 		}
-		$item = DataObject::get($classKind,NiceData::Query('TheObject' , $class)  . ' AND ' . NiceData::Query('ObjectID', $id ) );
+		$item = DataObject::get($classKind,NiceData::formQuery('TheObject' , $class)  . ' AND ' . NiceData::formQuery('ObjectID', $id ) );
 		if (!$item) self::addToDoItem ($classKind, $object, $operation, $params);
 	}
 

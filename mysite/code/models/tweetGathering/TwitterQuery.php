@@ -40,8 +40,11 @@ class TwitterQuery extends DataObject {
 		switch($this->authority) {
 			case "none": return false;
 			case "penName": if( $this->penNameID) return $this->penName()->screen_name;
-			case "mentee": if ($this->mentee) return $this->mentee->screen_name;
-			case "Organizer": if ($this->Organizer) return $this->Organizer->screen_name;
+			case "mentee": if ($this->menteeID) return $this->mentee()->screen_name;
+			case "Organizer": if ($this->OrganizerID) return $this->Organizer()->screen_name;
+Debug::show($this);
+Debug::show("No authority!");
+
 				error_log("no valid authorization for TwitterQuery ID=". $this->ID);
 				die();
 		}

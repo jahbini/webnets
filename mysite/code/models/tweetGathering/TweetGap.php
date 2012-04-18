@@ -254,8 +254,8 @@ $this->setStat("Mid Gap Tweets below " . $this->current() .", my parent ID = {$p
 	function reschedule(){
 		$parent=$this->TwitterQuery();
 		$todoType=$parent->ToDoType();
-		$t = DataObject::get_one('ToDo', NiceData::Query('TheObject', "TweetGap") 
-				. " AND " . NiceData::Query( 'ObjectID' , $this->ID) );
+		$t = DataObject::get_one('ToDo', NiceData::formQuery('TheObject', "TweetGap") 
+				. " AND " . NiceData::formQuery( 'ObjectID' , $this->ID) );
 		if ($t) { $t->delete();}
 		switch ( $this->gapKind)  {
 			case "initial": $operation = 'getInitialTweets';

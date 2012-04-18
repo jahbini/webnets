@@ -74,33 +74,32 @@ class PenName extends TweetUser {
 		$firstMessage="";
 		$new_friend=& TweetUser::getTweetUser($screen_name);
 		if (!$new_friend) return 2;
-		$twitter = new SaneRest("http://twitter.com/friendships/create.xml");
+		$twitter = new SaneRest("http://twitter.com/friendships/create.json");
 		$this -> twitter = $twitter;  // for the UsersPenName if he is the one who called us
 		$twitter -> Authenticate($this);
 		$params = array('follow' => 'true', 'screen_name' => $screen_name);
 		//$twitter->setQueryString($params);
 		$conn = SaneResponse::makeSane($x=$twitter->request('','POST', $params) );
+
 		$response = $conn->analyze_code();
 		if ($response) {
 			$text = $conn->getBody();
 			// Twitter sends an error if we are already following, so ignore it
 			if (!stristr($text,'Already foll') && !stristr($text, "is already on your") ) return $response;   // did not work
 			}
-		$default=$conn->setDefaultNamespace();
-		$userInfo =  $twitter->getRequestValues($conn->xpath('//'.$default.'user'))->First();
+
+		$userInfo = json_decode($conn->getBody() );
 		PleaseMap::object2object($new_friend,  TweetUser::$friendships_create, $userInfo);
 		error_log("Greeting Data for " . $new_friend->name  . " ($screen_name)  retrieved");
 			
 		$new_friend->received = true;
 		$new_friend->write();
-
-		$tweetInfo = $twitter->getRequestValues($conn->xpath('//'.$default.'status')); // ArrayData Objects suk
-		if ($tweetInfo->exists()) {
-			$tweetInfo = $tweetInfo->First();
+		@$tweetInfo = $userInfo->status;
+		if ($tweetInfo) {
 			$x=array();
-			$x['Title'] = $tweetInfo->getField('text');
+			$x['Title'] = $tweetInfo->text;
 			$x['author_name'] = $new_friend->screen_name;
-			$x['StatusID'] = $tweetInfo->getField('id');
+			$x['StatusID'] = $tweetInfo->id;
 			$new_tweet= Tweet::getasAPITweet($x) ;
 		error_log("First tweet " . $x['Title'] . " ($screen_name)  retrieved");
 		}

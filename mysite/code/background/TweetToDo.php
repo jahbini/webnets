@@ -7,7 +7,7 @@ class TweetToDo extends ToDo {
 
 	function firstSuspend() {
 		error_log("not too easy first suspension");
-		$lastSuspend = DataObject::get_one('TweetToDo', "",true ,'`Suspend` DESC' );
+		$lastSuspend = DataObject::get_one('TweetToDo', "",true ,'"Suspend" DESC' );
 		if (! $lastSuspend ) return 3*60;
 		$s=$lastSuspend -> Suspend;
 		if (! $s ) return 3*60;

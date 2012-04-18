@@ -31,8 +31,6 @@ class TwitterIt extends DataObject {
 	}
 
 	function TweetThis ($params) {
-	global $consumer_key;
-	global $consumer_secret;
 		$p = PenName::get($params['PenNameID']);
 		$theTweet = DataObject::get_by_id('Tweet', $params['TweetID']) ;
 	if (isset($params['screen_name']) ) {

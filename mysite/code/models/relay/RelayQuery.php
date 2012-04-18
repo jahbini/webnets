@@ -59,8 +59,8 @@ class RelayQuery extends TwitterQuery {
 					$q=$q->screen_name;
 				}
 				break;
-			case 'Organizer': $q=$this->Organizer->screen_name;
-					$this ->authenticator = $this->Organizer;
+			case 'Organizer': $q=$this->Organizer()->screen_name;
+					$this ->authenticator = $this->Organizer();
 				break;
 			case 'mentee': $q=$this->mentee->screen_name;
 					$this ->authenticator = $this->mentee;

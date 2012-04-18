@@ -1,3 +1,4 @@
+URL Segment=$URLSegment, BaseHref=$BaseHref
 <% if $notYetValid() %>
 <h1> 2 Complete your membership with a  valid password</h1>
 <% else %>
@@ -17,7 +18,7 @@ $form
 <li> $Title
 <% if $ClassName==Organizer %>
 - Organizer for SubDomain $SubDomain
-<a href='http://<% if $SubDomain!=all %>$SubDomain.<% end_if %>webnets/$URLSegment/Organizer?Organizer=$ID' > edit </a>
+<a href='$Top.URLSegment/Organizer?Organizer=$ID' > edit </a>
 <% end_if %>
 </li>
 <% end_control %>

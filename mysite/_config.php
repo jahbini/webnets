@@ -13,6 +13,16 @@ $databaseConfig = array(
 	"path" => '',
 );
 
+$databaseConfig = array(
+	"type" => 'MySQLDatabase',
+	"server" => 'mysql.modernmarianas.com',
+	"username" => 'modern_marianas',
+	"password" => 'mM2f4qMD',
+	"database" => 'modern_marianas',
+	"path" => '',
+);
+
+
 MySQLDatabase::set_connection_charset('utf8');
 
 // Set the current theme. More themes can be downloaded from
@@ -28,8 +38,6 @@ if (class_exists('SiteTree')) SiteTree::enable_nested_urls();
 global $Geo; $Geo = 'North America';
 global $GeoShort; $GeoShort = 'en';
 global $databaseConfig;
-global $consumer_key;
-global $consumer_secret;
 	
   if ( array_key_exists('HTTP_HOST', $_SERVER)) {
 	  $names = explode ('.', strtolower($_SERVER['HTTP_HOST'] ));
@@ -45,7 +53,6 @@ global $consumer_secret;
 
   global $OrganizerLocation;
   $OrganizerLocation = 'en';
-  global $WantedSubDomain;
 
 global $WantedSubDomain;
   $WantedSubDomain = array_shift($names);
@@ -57,9 +64,6 @@ default: $WantedSubDomain = 'all';
 
 error_log("-----------------------------------------------------------------");
 error_log("config says WantedSubDomain= $WantedSubDomain");
-/* use tell140 credentials */
-	$consumer_key = 	"uCTUCMz2s5K4fxqzTThiQ";
-	$consumer_secret = "nvrbum4ruYGX3irYq42TGy4rbY2vN0uetaaOwykF0Ls";
 
 //Security::setDefaultAdmin('jahbini','password');
 Authenticator::register_authenticator('ProfileAuthenticator');
@@ -103,7 +107,7 @@ function ERROR_LOGGER($f) {error_log($f); }
 Security::setDefaultAdmin('jahbini','password');
 function _e($msg) {user_error($msg,E_USER_ERROR);}
 function _w($msg) {user_error($msg,E_USER_WARNING);}
-define('RELAY_HOST', 'webnets');
+define('RELAY_HOST', 'modernmarianas.com');
 define('ANALYTICS', false);  //only enable google analytics when site is live
 Director::set_environment_type("dev");
 

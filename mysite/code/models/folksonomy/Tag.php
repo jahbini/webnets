@@ -21,7 +21,7 @@ public function forTemplate() {
 
 static function requireTagDrop(){
 	Requirements::javascript(THIRDPARTY_DIR. '/jquery/jquery.js');
-	Requirements::javascript(THIRDPARTY_DIR. '/jquery/plugins/livequery/jquery.livequery.js');
+	Requirements::javascript(THIRDPARTY_DIR. '/jquery-livequery/jquery.livequery.js');
 	View::wrapJava(<<<JS
 $('.makeClassic').livequery('click', function() { 
 $(this).css({backgroundColor:'beige'});

@@ -170,7 +170,7 @@ JSON
 				$member -> write();
 			}
 			if (!isset($values['ProfileName'])) $values['ProfileName'] = $name;
-			$profile = niceData::getOne('Profile','name', $values['ProfileName'] );
+			$profile = NiceData::getOne('Profile','name', $values['ProfileName'] );
 
 			$values['GeoLocation'] = '|' . join('|', explode(',',$values['Location']) ).'|' ;
 

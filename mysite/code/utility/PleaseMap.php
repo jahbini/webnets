@@ -61,8 +61,6 @@ class rqNurse {
 	   return false;
 	}
 	function go_to_twitter($params , $cacheOK= true){
-	   global $consumer_key;
-	   global $consumer_secret;
 	   $w = $this->relayQuery->requestString();
 	   if($this->Organizer) $w=str_replace('Organizer',$this->Organizer->screen_name,$w);
 	   if($this->mentee) $w=str_replace('mentee',$this->mentee->screen_name,$w);
@@ -73,7 +71,7 @@ class rqNurse {
 		   $jsdata= $this->channel->request();
 		   $content = $jsdata->getBody();
 	   } else {
-		   $this->channel = new TwitterOAuth($consumer_key, $consumer_secret, $this->penName -> request_token , $this->penName -> request_token_secret);
+		   $this->channel = new TwitterOAuth(SubDomain::getTheConsumerKey(),SubDomain::getTheConsumerSecret(), $this->penName -> request_token , $this->penName -> request_token_secret);
 		   $content = $this->channel->OAuthRequest($w . '.json', $this->relayQuery->requestParams($params),'GET');
 		error_log(print_r($this-> channel -> responseHeaders(),1));
 	   }
@@ -272,14 +270,12 @@ class SaneRest extends ViewableData {
 	 */
 	
 	public function request($subURL = '', $method = "GET", $data = null, $headers = null) {
-		global $consumer_key;
-		global $consumer_secret;
 		if($this->response) return $this->response;
 		$url= $this->getAbsoluteURL($subURL);
 		$method = strtoupper($method);
 
 		if ($this->auth_token) {
-			$r = new TwitterOAuth($consumer_key,$consumer_secret, $this->auth_token, $this->auth_secret);
+			$r = new TwitterOAuth(SubDomain::getTheConsumerKey(),SubDomain::getTheConsumerSecret(), $this->auth_token, $this->auth_secret);
 			if (!$data) $data=array();
 			$data = array_merge($data,$this->params);
 			$this->responseBody = $r -> oAuthRequest($url,$data,$method);
@@ -472,6 +468,9 @@ class SaneResponse extends RestfulService_Response {
 		$new = new SaneResponse($body, $status, $headers);
 		return $new;
 	}
+	function getStatus(){
+		return $this->status;
+	}
 
 	 function analyze_code($debug=false){
 		// look at the return status code from twitter
@@ -535,14 +534,14 @@ class formUtility {
 					     }  
 }
 /*
- * niceData - form proper quoted sql phrase for get, and helper get_one (GetOne)
+ * NiceData - form proper quoted sql phrase for get, and helper get_one (GetOne)
  */
-class niceData {
-	  static function Query($field,$what,$match='='){
+class NiceData {
+	  static function formQuery($field,$what,$match='='){
 		  return '"' . $field. '"' . $match . " '" . $what . "'";
 	  }
-	  static function GetOne($obj,$field,$what,$match='='){
-		  return DataObject::get_one($obj,self::Query($field,$what,$match));
+	  static function getOne($obj,$field,$what,$match='='){
+		  return DataObject::get_one($obj,self::formQuery($field,$what,$match));
 	  }
 }
 

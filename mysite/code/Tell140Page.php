@@ -184,9 +184,8 @@ class Tell140Page_Controller extends Page_Controller {
 	$this->not_ajax = ! Director::is_ajax();
        if($this->not_ajax) {	
 	  error_log("Requireing javascript");
-	       Requirements::javascript('mysite/javascript/jquery-1.3.2.js');
-	      Requirements::block(THIRDPARTY_DIR. '/jquery/jquery.js');
-	      Requirements::javascript(THIRDPARTY_DIR . '/jquery/plugins/form/jquery.form.js');
+	      Requirements::javascript(THIRDPARTY_DIR . '/jquery/jquery.js');
+	      Requirements::javascript(THIRDPARTY_DIR . '/jquery-form/jquery.form.js');
 		Requirements::css('mysite/css/typography.css');
 	      if($this->requiresTabAction){
 		   Requirements::javascript('mysite/javascript/tools.tabs-1.0.1.js');
@@ -235,11 +234,9 @@ class Tell140Page_Controller extends Page_Controller {
     *  new credentials, we then will splice the new pen name into their profile data 
     */
 	function xxxnewPenName(){
-		global $consumer_key;
-		global $consumer_secret;
 		Session::set('pre_auth',$_SERVER['HTTP_REFERER']);
 		include_once('auth/twitterOAuth.php');
-		$askForAuth = new TwitterOAuth($consumer_key, $consumer_secret);
+		$askForAuth = new TwitterOAuth(SubDomain::getTheConsumerKey(), SubDomain::getTheConsumerSecret());
 		$newCredentials = $askForAuth -> getRequestToken();
 		Session::set('request_token', $newCredentials['oauth_token'] );
 		Session::set('request_token_secret', $newCredentials['oauth_token_secret'] );
@@ -255,11 +252,9 @@ class Tell140Page_Controller extends Page_Controller {
 	error_log("in " . __CLASS__. " Method " . __METHOD__ . " Line=" . __LINE__ );
 
 		// The user has clicked on a link and requested a new authorization code
-		global $consumer_key;
-		global $consumer_secret;
 		Session::set('pre_auth',$_SERVER['HTTP_REFERER']);
 		include_once('auth/twitterOAuth.php');
-		$askForAuth = new TwitterOAuth($consumer_key, $consumer_secret);
+		$askForAuth = new TwitterOAuth(SubDomain::getTheConsumerKey(), SubDomain::getTheConsumerSecret());
 		$newCredentials = $askForAuth -> getRequestToken();
 		if (!isset($newCredentials['oauth_token'] ) ) {
 			Debug::show($askForAuth);
@@ -460,9 +455,8 @@ class Tell140Page_Controller extends Page_Controller {
 			}
 		}
 		
-		echo(json_encode(array('user'=>$result)));
-		FormResponse::add(json_encode($result));
-		FormResponse::respond();
+	   $this->getResponse()->addHeader('Content-Type', 'text/javascript; charset="utf-8"');
+		return (json_encode(array('user'=>$result)));
 	}
 
 	function follow($data) {
@@ -473,6 +467,7 @@ class Tell140Page_Controller extends Page_Controller {
 			return("jQuery('span[class*=who__{$name}]').text('PenNameError');");
 		$tweet=$data->requestVar('tweet');
 		$boss->follow($name,$tweet); // can only tweet those who follow me!
+	   $this->getResponse()->addHeader('Content-Type', 'text/javascript; charset="utf-8"');
 		return("jQuery('span[class*=who__{$name}]').text('Unfollow').removeClass('canFollow').addClass('alreadyFollow');");
 	}
 
@@ -485,21 +480,20 @@ class Tell140Page_Controller extends Page_Controller {
 		//ERROR_LOGGER("ready to acton Active ID=" . $tweetID);
        //   $tweet->actOn();
 		//ERROR_LOGGER("acted Active ID=" . $tweetID);
-		//FormResponse::add( "jQuery('span[class*=acton__{$tweetID}]').text('Acted');");
-		FormResponse::add( "jQuery('span[class*=acton__{$tweetID}]').find('a').text('Acted');");
-		return FormResponse::respond();	
+	   $this->getResponse()->addHeader('Content-Type', 'text/javascript; charset="utf-8"');
+		return ( "jQuery('span[class*=acton__{$tweetID}]').find('a').text('Acted');");
 	}
 
 static function RequireTweetAction(){
+   Requirements::javascript('mysite/javascript/hoverIntent.min.js');
+   Requirements::javascript('mysite/javascript/maxlength.js');
+   Requirements::javascript('tools.scrollable-1.0.5.js');
    if(Director::isLive() && ! Session::get('notrack') =="true" ) {
       //Requirements::javascript('mysite/javascript/waterfall.min.js');
       Requirements::javascript('mysite/javascript/waterfall.js');
    } else {
       Requirements::javascript('mysite/javascript/waterfall.js');
    }
-   Requirements::javascript('mysite/javascript/hoverIntent.min.js');
-   Requirements::javascript('mysite/javascript/maxlength.js');
-   Requirements::javascript('tools.scrollable-1.0.5.js');
 }
 
 
@@ -514,8 +508,8 @@ static function RequireTweetAction(){
 	function changePenName($data) {
 		$name = $data->param('ID');
 		$pen = PenName::getSessionPenName( $name,true);
-		//FormResponse::add("submitted");
-		return FormResponse::respond();	
+	   $this->getResponse()->addHeader('Content-Type', 'text/javascript; charset="utf-8"');
+		return '';
 	}
 
 	function smbtTweet ( $data, $form) {
@@ -524,8 +518,7 @@ static function RequireTweetAction(){
 		if (! $id) {
 	       $t = Session::get('socialiteProfileID');
 	       if(!$t){
-			FormResponse::add("Please sign up to send tweets");
-			return FormResponse::respond();
+			return("Please sign up to send tweets");
 			}
 		}
 		$data = $form->getData();
@@ -579,9 +572,8 @@ static function RequireTweetAction(){
 		  $response = "unknown routing code (" . $data['routing']. ")";
 		  }
 		}
-		
-		FormResponse::add($response );
-		return FormResponse::respond();	
+	   $this->getResponse()->addHeader('Content-Type', 'text/javascript; charset="utf-8"');
+		return "'$response'";
 	}
 
 	function followFriday ( $data, $form) {
@@ -600,16 +592,16 @@ static function RequireTweetAction(){
 			}
 		}
 
+	   $this->getResponse()->addHeader('Content-Type', 'text/javascript; charset="utf-8"');
 		return $response;
 		//if($tag && $tag !="submitted" &&  $penNameID) TwitterIt::TweetOut($tag, $penNameID);
-		FormResponse::add("$response");
-		return FormResponse::respond();	
 	}
 
 
 	function block($data) {
 		ERROR_LOGGER("block Active");
 		if( !Director::is_ajax() ) return "";
+	   $this->getResponse()->addHeader('Content-Type', 'text/javascript; charset="utf-8"');
 		$name = $data->param('ID');
 		$boss = PenName::getSessionPenName();
 		$boss->block($name);
@@ -621,6 +613,7 @@ static function RequireTweetAction(){
 	function unfollow($data) {
 		ERROR_LOGGER("Unfollow Active");
 		if( !Director::is_ajax() ) return "";
+	   $this->getResponse()->addHeader('Content-Type', 'text/javascript; charset="utf-8"');
 		$name = $data->param('ID');
 		$boss = PenName::getSessionPenName();
 		$boss->unfollow($name);
@@ -632,6 +625,7 @@ static function RequireTweetAction(){
 	function massUnfollow(){
 		$boss = PenName::getSessionPenName();
 		//$boss->unfollow($name);
+	   $this->getResponse()->addHeader('Content-Type', 'text/javascript; charset="utf-8"');
 		return("jQuery('span[class*=who__{$name}]').text('Follow').removeClass('alreadyFollow').addClass('canFollow');");
 	}
 

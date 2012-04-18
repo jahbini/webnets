@@ -108,7 +108,6 @@ class GraphPage_Controller extends Tell140Page_Controller {
 	var $profile = false;
 	var $alsoP = false;
    function init() {
-global $WantedSubDomain;
       parent::init();
 
       if( $this->not_ajax ) {
@@ -213,7 +212,7 @@ private function divContents($divname,$Title,$sticks,$visuals) {
 
 	function testContest( $contestTitle ){
 		return;
-		$oldTests = DataObject::get("Contest", "Title LIKE 'Test%'");
+		$oldTests = DataObject::get("Contest", '"Title" LIKE \'Test%\'');
 		foreach ($oldTests as $t) $t ->delete();
 		$t = new Contest();
 		$t -> Title = 'Test Contest - bartender';
