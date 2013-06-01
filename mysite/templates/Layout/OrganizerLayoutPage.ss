@@ -9,9 +9,9 @@ $DisplayForm()
 <% else %>
 $forceMode(attract)
 $forceMode(loggedIn)
-<% control Organizer.Modes %>
-<h2>Mode ID = $ID used for $Use (attract a user or when user is logged in - if you allow that) <a href='{$Top.link}deleteMode?Mode=$ID'>Delete</a></h2>
-$forcePane($ID)
+
+<% control SubDomain.Attract %>
+<h2>Mode ID = $ID used in attract mode</h2>
 <ul>
 <% control Panes %>
 <% if editThisPane($ID) %>
@@ -32,6 +32,34 @@ $forcePane($ID)
 <a href='{$Top.link}newQuery?Pane=$ID' >Create a new Query in this pane</a></li>
 </ul>
 <% end_control %>
-::::::<a href='{$Top.link}newPane?Mode=$ID' >Create an adjacent pane in $Use mode</a>
+::::::<a href='{$Top.link}newPane?Mode=$ID' >Create an adjacent pane in Attract mode</a>
 <% end_control %>
+<% if SubDomain.AllowLogin %>
+<% control SubDomain.LoggedIn %>
+<h2>Mode ID = $ID used when member is logged in</h2>
+<ul>
+<% control Panes %>
+<% if editThisPane($ID) %>
+<li><div>$editPaneForm</div></li>
+<% else %>
+<li>Pane: Used as Pane.userKey= $userKey, Pane.ID=$ID, Pane.width=$width
+<a href='{$Top.link}editPaneInfo?Pane=$ID' >Alter Pane information</a>
+<a href='{$Top.link}deletePaneInfo?Pane=$ID' >Delete this Pane and all queries under it</a>
+</li>
+<% end_if %>
+<ul>
+<% control Queries %>
+<li>$ID , $Title , $ClassName
+<a href='{$Top.link}deleteQuery?RelayQuery=$ID' >Delete this  Query</a></li>
+</li>
+<% end_control %>
+<li>:::::
+<a href='{$Top.link}newQuery?Pane=$ID' >Create a new Query in this pane</a></li>
+</ul>
+<% end_control %>
+::::::<a href='{$Top.link}newPane?Mode=$ID' >Create an adjacent pane in logged in  mode</a>
+<% end_control %>
+<% end_if %>
+
+
 <% end_if %>

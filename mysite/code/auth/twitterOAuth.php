@@ -125,6 +125,7 @@ class TwitterOAuth {/*{{{*/
     if (empty($method)) $method = empty($args) ? "GET" : "POST";
     $req = OAuthRequest::from_consumer_and_token($this->consumer, $this->token, $method, $url, $args);
     $req->sign_request($this->sha1_method, $this->consumer, $this->token);
+    error_log($req->to_url());
     switch ($method) {
     case 'GET': return $this->http($req->to_url());
     case 'POST': return $this->http($req->get_normalized_http_url(), $req->to_postdata());

@@ -1,26 +1,27 @@
 <?php
 class Mode extends DataObject {
-	static $db = array ( 'Use' => "Enum('attract,loggedin','attract')");
 	static $has_many = array('Panes' => 'Pane');
-	static $has_one = array('PenName' => 'PenName');
+	static $has_one = array('LoggedIn' => 'SubDomain.LoggedIn','Attract'=>'SubDomain.Attract');
 
 	function onDelete(){
-		$myPanes = $this->Panes();
+		$myPanes = $this->LoggedIn();
+		$myPanes -> merge($this->Attract());
 		foreach($myPanes as $pane) {
 			$pane->deletePane();
 		}
 		$this->delete();
 		return;
 	}
-	   function forcePane($modeID){
-	    $panes = $this->Panes();
+	   function forcePane($modeID,$Use){
+	    $panes = $this->$Use();
 	    if ($panes -> count() == 0) {
 		$pd = new Pane();
 		$pd->userKey = 'Selected Tweets';
 		$pd->width = 3;
 		$pd->ModeID=$this->ID;
 		$pd->Write();
-		$panes->add($pd);
+		$pointer = $Use . 'ID';
+		$this->$pointer = $pd->ID;
 		$this->write();  //update the DB
 	    }
 	    return '';

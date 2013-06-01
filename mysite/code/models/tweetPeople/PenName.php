@@ -7,30 +7,13 @@
 
 class PenName extends TweetUser {
 	static $db = array( 'request_token_secret' => 'Varchar', 'request_token' => 'Varchar(100)', 'Password' => 'Varchar' ,  'LastTweetOut' => 'Datetime');
-	static $has_many=array('Messages'=>'CannedMessage','Modes'=>'Mode');
+	static $has_many=array('Messages'=>'CannedMessage');
 	static $has_one = array('Profile' => 'Profile','Scheduler'=>'Scheduler');
 
 	function getCMSFields(){              
 		 $fields = parent::getCMSFields();
 	       return formUtility::removeFields($fields,array('SchedulerID','request_token_secret','request_token','LastTweetOut'));
 	    }
-
-
-   /*
-    * Get or Create a Mode by the intended Use: LoggedIn, Attract or
-    * whatever.  The mode is used to display the proper set of 
-    * panes on the display for the Organizer of the site
-    */
-   function getModeByUse($use) {
-	   $set = $this->Modes("`Use`='$use'");
-	   if($set->exists()) return $set->First();
-	   $mode = new Mode();
-	   $u="Use";   //  Use is a PHP reserved word, so we have to escape it
-	   $mode -> $u = $use;
-	   $mode ->write();
-	   $set->add($mode);
-	   return $mode;
-   }
 
 	function getTitle() {
 		return $this->screen_name;

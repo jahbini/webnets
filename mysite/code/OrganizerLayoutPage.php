@@ -16,24 +16,20 @@ class OrganizerLayoutPage extends ProfilePage {
 	if ($myPage instanceOF Page ) {
 	    $myPage = $myPage -> newClassInstance('OrganizerLayoutPage');
 	    $myPage -> write();
-	}
-
-       if (!$myPage) {
+	} 
+	if (!$myPage) {
 	   $myPage = new OrganizerLayoutPage();
-       }
-	
-       $myPage ->Title = "Organizer Layout";
-      $myPage -> CanViewType = 'LoggedInUsers';
-      $myPage -> ShowInSearch = false;
-      $myPage -> ShowInMenus = false;
-				
-   $myPage->URLSegment = "Organizer";
-   $myPage->Status="Published";
-   $myPage->write();
-   $myPage->publish("Stage","Live");
-   $myPage->flushCache();
-
-  DB::alteration_message("Organizer Layout Page installed");
+       	}
+	$myPage ->Title = "Organizer Layout";
+	$myPage -> CanViewType = 'LoggedInUsers';
+	$myPage -> ShowInSearch = false;
+	$myPage -> ShowInMenus = false; 
+	$myPage->URLSegment = "user-profile/Organizer";
+	$myPage->Status="Published";
+	$myPage->write();
+	$myPage->publish("Stage","Live");
+	$myPage->flushCache(); 
+	DB::alteration_message("Organizer Layout Page installed");
    }
 
 /*
@@ -179,17 +175,14 @@ class OrganizerLayoutPage_Controller extends ProfilePage_Controller {
 
 	function forceMode($which){
 	   //Debug::show($_REQUEST);
-	       $p = $this->Organizer;
-	   //Debug::show($p);
-		$modes = $p->Modes('"Use"=\''.$which."'");
-		if($modes->count() == 0) {
-		   $m = new Mode();
-		   $m ->Use = $which;
-		   $m -> write();
-		   $p->Modes()->add($m);
-		   $p->write(); // update the DB
-		}
-		return '';
+	       $p = $this->SubDomain()->$which();
+	       if (!$p) {
+		  $p = new Mode();
+		  $p->write();
+		  $this->SubDomain()->setField($which,$p);
+		  $this->SubDoamin()->write();
+	       }
+	       return '';
 	}
 
 	function gimmePenNames(){
@@ -241,18 +234,18 @@ class OrganizerLayoutPage_Controller extends ProfilePage_Controller {
 	   $x -> Organizer = $this->Organizer;
 	   $form->saveInto($x);
 	   $x->write();
-	   Debug::show($x);
+	   //Debug::show($x);
 	   $x->Mobi=true;
-	   Debug::show($x);
+	   //Debug::show($x);
 	   $x->write();
-	   Debug::show($x);
+	   //Debug::show($x);
 	   } catch (exception $e) {
 	      $form-> sessionMessage("Error in creating " .$this->RelayClasses[$data['allQueries']] ." - " .$e->getMessage(),"bad" );
 	      Director::redirectBack();
 	      return;
 	   }
-	   Debug::show($x);
-	   die();
+	   //Debug::show($x);
+	   //die();
 	   Director::redirect($this->Link() . '?Organizer=' . $this->Organizer->ID);
 	}
 }

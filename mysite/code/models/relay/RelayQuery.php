@@ -147,8 +147,7 @@ class RelayQuery extends TwitterQuery {
 		
 		$log_msg = "processed $tweetsProcessed in $elapsedTime seconds";
 		$this->containsRange($range); // update and write the range in this twitterQuery
-		$this->sayThis($this->query); // enter the log message
-		$this->sayThis($log_msg);
+		$this->sayThis($log_msg . ' href=' .$this->query); // enter the log message
 		return $range;
 	}
 

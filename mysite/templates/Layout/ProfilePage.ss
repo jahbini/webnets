@@ -11,6 +11,16 @@ $form
 </div>
 <div id='penNames' >
 <p>This is the place where you allow us to get and send your tweets.  You click on the link to get a new pen-name (that is really your twitter name) and we will send you to twitter.com, where you will be able to  authorize your current twitter name, or even create a new twitter name.  when you authorize twitter to be your go-between, you will come back to this page!  It is simple and safe.  You can have any number of pen-name accounts, many people have a personal pen-name, a business pen-name and a very personal pen name.  We can handle all of that!</p>
+
+<% if Profile.SubDomains %>
+<p> These are the Organizations you have </p>
+<ol>
+<% control Profile.SubDomains %>
+<li>{$Title} $linkToSubDomain  </em> <% if Organizer %> Organized by $Organizer.Title <a href="{$Top.Link}deleteOrganizer?Organizer=Organizer.ID"> delete $Organizer.Name</a> <% else %> No Current Organizer!  <%end_if %>
+</li>
+<% end_control %>
+</ol>
+<% end_if %>
 <% if Profile.PenNames %>
 <p>These are the pen-names you have authorized to  use with twitter</p>
 <ol>
@@ -18,7 +28,7 @@ $form
 <li> $Title
 <% if $ClassName==Organizer %>
 - Organizer for SubDomain $SubDomain
-<a href='$Top.URLSegment/Organizer?Organizer=$ID' > edit </a>
+<a href='$linkToSubDomain/Organizer?Organizer=$ID' > edit </a>
 <% end_if %>
 </li>
 <% end_control %>
@@ -31,6 +41,12 @@ $form
 </div>
 <% if $notYetValid() %>
 <% else %>
-<p>more text follow this link to update your waterfall display</p>
+<% if Profile.PenNames %>
+<% if Profile.SubDomains %>
+<h2> Re-assign SubDomain / Organizer association</h2>
+$OrganizerSubDomainForm()
+<% end_if %>
+<% end_if %>
+
 <% end_if %>
 

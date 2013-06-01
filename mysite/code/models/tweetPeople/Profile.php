@@ -12,12 +12,17 @@ class ProfileNames extends ModelAdmin {
 }
 
 class Profile extends DataObject implements PermissionProvider {
-   static $db = array('Name' => 'Varchar', 'Email' => 'Varchar', 'ValidationToken' => 'Varchar' , 'allow' => "Enum('OK, blocked','OK')" , 'RoleID' => 'Int');
+   static $db = array('Name' => 'Varchar'
+      ,'Email' => 'Varchar'
+      ,'ValidationToken' => 'Varchar'
+      ,'allow' => "Enum('OK, blocked','OK')"
+      ,'RoleID' => 'Int'
+   );
 
    static $many_many = array('TwitterQueries' => 'TwitterQuery');
-   static $has_many = array('PenNames' => 'PenName' );
+   static $has_many = array('PenNames' => 'PenName','SubDomains' => 'SubDomain' );
    static $indexes = array('Name' => true);
-   static $has_one = array('Member' => 'Member');
+   static $has_one = array('Member' => 'Member','MyPane'=>'Pane');
 
    //static $many_many = array('TopTen' => 'Tag');
 
@@ -100,10 +105,16 @@ class Profile extends DataObject implements PermissionProvider {
 
 	static $required=false;
 	function requireDefaultRecords() {
-		if(self::$required ) return;
+	 DB::alteration_message("Profiles created?","created");
+	   if(self::$required ) {
+	 DB::alteration_message("Profiles already created - - early return","created");
+	      return;
+	   }
 		self::$required=true;	
-		   Organizer::requireDefaultRecords();
 	      parent::requireDefaultRecords();
+		
+		$o=singleton('Organizer');
+		$o->requireDefaultRecords();
 
       $adminGroup = $this -> updatePermissionDB('ADMIN', 'ADMIN');  
       $socialiteGroup = $this -> updatePermissionDB('SOCIALITE', 'Guest');  
@@ -128,7 +139,16 @@ class Profile extends DataObject implements PermissionProvider {
 		   $jimProfile= new Profile(array('Name' => 'jahbini') );
 	   }
 	   $jimProfile -> MemberID = $jim->ID;
+
 	   $jimProfile -> write();
+	   $penNames = DataObject::get("PenName");
+	   Debug::show($penNames);
+	   foreach($penNames as $p) {
+	      $p->ProfileID=$jimProfile->ID;  // this is just stupidly redundant, Mr. Silverstripe JAH
+	      $p->write();
+	      Debug::show($p);
+	   }
+	 DB::alteration_message("Profile JAHbInI created","created");
 
       $all_users=DataObject::get('Member');
       if($all_users) foreach ($all_users as $u) {

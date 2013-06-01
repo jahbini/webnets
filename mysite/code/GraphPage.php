@@ -127,32 +127,19 @@ function Queries () {
 		. "<span class='refresher'><input type='radio' name='refreshx' value='once'>&nbsp;refresh once</span>"
 		. "<span class='refresher'><input type='radio' name='refreshx' value='off'>&nbsp;no refresh</span>"
 		. "</form>" . "</div>";
-	$currentMode = 'LoggedIn';
-	if (!$this->profile->ID) { // we are not logged in
-		//Debug::show("no profile -- using Organizer");
-	      $currentMode = 'Attract';
-	      $mode = $this->Organizer->getModeByUse($currentMode);
-	      //Debug::show($mode);
-	      $p = $mode -> Panes("",'"userKey" DESC');
-	} else {
-	      $p = $this->Organizer-> getModeByUse('LoggedIn') -> Panes("",'"userKey" DESC');
-//Debug::show($this->profile);
-	  }	
-	if (! $p->exists() ){
-	//   Debug::show($this->Organizer);
-	   $p = $this->Organizer -> Profile();
-	   //Debug::show($p);
-	   if (!$p->ID) $p->write();
-	   //$p =  $p-> getModeByUse('AttendingClub');
-	   $p = $this->Organizer->getModeByUse('AttendingClub');
-	   //Debug::show($p);
-	   if (! $p->ID) $p ->write();
-	   //Debug::show($p);
-	   $p= $p -> Panes("",'"userKey" ASC');
-	   //Debug::show($p);
-	//	return "<h1> Please visit your Profile Page and design your Queries Display " . $this->Organizer->name ." </h1>";
+	$currentMode = ($this->profile->ID)? 'LoggedIn':'Attract';
+	$panes = $this->SubDomain()->$currentMode() -> Panes("",'"userKey" DESC');
 
+	if ($this->profile->ID) { // we are logged in
+	   // add the user's pane if we are logged in
+	      $hisPane=$this->profile->MyPane();
+	   if($hisPane) $panes->add($hisPane);
+	} 
+
+	return $this->showPanes($panes,$refresh);
 	}
+
+protected function showPanes($p,$refresh=""){
 	$count=1;
 	$result ='';
 	foreach ($p as $pane ) {

@@ -12,7 +12,7 @@ $databaseConfig = array(
 	"database" => 'webnets',
 	"path" => '',
 );
-
+/*
 $databaseConfig = array(
 	"type" => 'MySQLDatabase',
 	"server" => 'mysql.modernmarianas.com',
@@ -21,6 +21,10 @@ $databaseConfig = array(
 	"database" => 'modern_marianas',
 	"path" => '',
 );
+ */
+
+global $thisDomain;
+$thisDomain = 'webnets';   // will be ModernMarianas.com on Dreamhost
 
 
 MySQLDatabase::set_connection_charset('utf8');
@@ -107,6 +111,9 @@ function ERROR_LOGGER($f) {error_log($f); }
 Security::setDefaultAdmin('jahbini','password');
 function _e($msg) {user_error($msg,E_USER_ERROR);}
 function _w($msg) {user_error($msg,E_USER_WARNING);}
+/*
+define('RELAY_HOST', 'webnets');
+ */
 define('RELAY_HOST', 'modernmarianas.com');
 define('ANALYTICS', false);  //only enable google analytics when site is live
 Director::set_environment_type("dev");

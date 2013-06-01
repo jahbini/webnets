@@ -61,14 +61,14 @@ class SearchRelayQuery extends RelayQuery {
 		$nw = array();
 		if(isset($content->results) ) {
 			$r = $content->results;
-			$this->sayThis('<pre>' . print_r($r,1). '</pre>');
+			if ($this-> debug) $this->sayThis('<pre>' . print_r($r,1). '</pre>');
 			$nw = array();
 			$this->range->requestOK();
 			$elapsedTime = time();
 
 			if (isset($r) && is_array($r) ) foreach($r as $d) {
 				$t =&  $this->clean_up($d);
-				$this->sayThis('<pre>' . print_r($d,1). '</pre>');
+			if ($this-> debug) $this->sayThis('<pre>' . print_r($d,1). '</pre>');
 				if (!$t) continue;
 				$nw[] =& $t;
 			}

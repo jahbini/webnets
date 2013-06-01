@@ -239,6 +239,39 @@ error_log("in " . __CLASS__. " Method " . __METHOD__ . " Line=" . __LINE__ );
       Director::redirectBack();
       return $this;
    }
+
+function organizerSubDomainForm(){
+   $f = new FieldSet ();
+   $profile = $this->Profile();  // Also sets Member
+error_log("in " . __CLASS__. " Method " . __METHOD__ . " Line=" . __LINE__ );
+//Security::findAnAdministrator('jahbini','password');
+
+$f->push(new DropdownField(
+       $name = 'SubDomainID',
+           $title = 'select SubDomain',
+	       $source = $profile->SubDomains()->map("ID", "Title",$emptyString = "--select--", $sortByTitle = true),
+	           $value = 1
+		)); 
+
+$f->push(new DropdownField(
+       $name = 'PenNameID',
+           $title = 'select Organizer',
+	       $source = $profile->PenNames()->map("ID", "screen_name",$emptyString = "--select--", $sortByTitle = true),
+	           $value = 1
+		)); 
+
+$action = new FieldSet();
+$action ->push(new FormAction('assignOrganizer',"Assign Organizer"));
+  return new Form($this,'organizerSubDomainForm',$f,$action);
+}
+
+function assignOrganizer($data,$form){
+   $SubDomain = DataObject::get_by_id('SubDomain',$data['SubDomainID']);
+   $SubDomain ->Organizer = DataObject::get_by_id('PenName',$data['PenNameID']);
+   Director::redirectBack();
+   return;
+}
+
 }
 
 class myProfileValidator extends Validator {
